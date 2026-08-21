@@ -202,9 +202,6 @@
 }
 
 .brand-mark {
-  background: var(--primary);
-  border-radius: 0.75rem;
-  color: white;
   display: grid;
   height: 2.25rem;
   place-items: center;
@@ -592,10 +589,6 @@
 
 .auth-logo {
   align-items: center;
-  background: #2563eb;
-  border-radius: 1rem;
-  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
-  color: white;
   display: grid;
   height: 3rem;
   place-items: center;

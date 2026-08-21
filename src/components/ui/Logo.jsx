@@ -1,21 +1,9 @@
-// Glyph only, no background — drop it inside a colored square (e.g. .brand-mark, .auth-logo)
-// so it inherits that container's color as the stroke via currentColor.
+// The real TeamHub mark — same artwork as public/favicon.svg (the browser tab icon), so the
+// in-app brand mark and the tab icon match again. It's a complete, self-colored graphic (not a
+// currentColor glyph), so it should sit on a plain/transparent background, not a solid swatch.
 export function TeamHubMark({ size = 36 }) {
-  return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      height={size}
-      viewBox="0 0 24 24"
-      width={size}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M5 6.5h14M12 6.5v11"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="2.1"
-      />
-    </svg>
-  )
+  const width = size
+  const height = Math.round((size * 46) / 48)
+
+  return <img alt="" height={height} src="/favicon.svg" width={width} />
 }
