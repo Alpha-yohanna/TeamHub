@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { TeamHubMark } from '../../components/ui/Logo'
-import { isSupabaseConfigured } from '../../lib/supabaseClient'
 import { signInWithEmail, signUpWithEmail } from '../../services/authService'
 
 function EyeIcon({ open }) {
@@ -90,7 +89,7 @@ export function LoginPage({ onLogin }) {
 
       const session = isSignUp
         ? await signUpWithEmail({ email, password, fullName })
-        : await signInWithEmail({ email, password, role: 'admin' })
+        : await signInWithEmail({ email, password })
 
       if (session.requiresEmailConfirmation) {
         setInfoMessage('Account created. Check your email to confirm before logging in.')
@@ -242,8 +241,6 @@ export function LoginPage({ onLogin }) {
             </Button>
           </form>
         )}
-
-        {!isSupabaseConfigured && <p className="auth-note-tiny">Demo mode</p>}
       </section>
     </main>
   )

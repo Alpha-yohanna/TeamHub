@@ -60,7 +60,7 @@ export default function App() {
   const [page, setPage] = useState('login')
   const [role, setRole] = useState('admin')
   const [currentUser, setCurrentUser] = useState(null)
-  const [authSource, setAuthSource] = useState('demo')
+  const [authSource, setAuthSource] = useState(null)
   const [isRestoringSession, setIsRestoringSession] = useState(true)
   const [workspaces, setWorkspaces] = useState([])
   const [activeWorkspaceId, setActiveWorkspaceId] = useState(null)
@@ -187,7 +187,7 @@ export default function App() {
   async function handleLogout() {
     await signOut()
     setCurrentUser(null)
-    setAuthSource('demo')
+    setAuthSource(null)
     setWorkspaces([])
     setActiveWorkspaceId(null)
     setUnreadCount(0)

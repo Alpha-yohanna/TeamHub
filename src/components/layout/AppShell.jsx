@@ -78,7 +78,7 @@ export function AppShell({
           <div>
             <span className="preview-label">{activeWorkspace?.name || 'Your workspace'}</span>
             <strong>{activeWorkspace?.role ? `${capitalize(activeWorkspace.role)} access` : role === 'admin' ? 'Admin access' : 'Member access'}</strong>
-            <small className="topbar-meta">{currentUser?.email || 'admin@teamhub.app'}</small>
+            <small className="topbar-meta">{currentUser?.email}</small>
           </div>
           <div className="topbar-actions">
             <button className="search-button" onClick={() => setIsSearchOpen(true)} type="button">

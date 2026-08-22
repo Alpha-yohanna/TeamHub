@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
-import { adminStats, adminActivity, usersTable } from '../../data/appContent'
 import { timeAgo } from '../../lib/formatters'
 import { describeActivity, listActivity, logActivity } from '../../services/activityService'
 import { formatFileSize, listRecentFiles } from '../../services/fileService'
@@ -222,8 +221,8 @@ export function AdminDashboard({
     }
   }
 
-  const displayStats = isLive
-    ? stats && projectStats
+  const displayStats =
+    stats && projectStats
       ? [
           { label: 'Members', value: stats.memberCount },
           { label: 'Teams', value: stats.teamCount },
@@ -236,7 +235,6 @@ export function AdminDashboard({
           { label: 'Pending invites', value: stats.pendingInviteCount },
         ]
       : []
-    : adminStats
 
   return (
     <section className="dashboard-page" aria-labelledby="dashboard-title">
@@ -321,22 +319,13 @@ export function AdminDashboard({
             <h2>Recent activity</h2>
           </div>
           <div className="activity-list">
-            {isLive ? (
-              recentActivity.length === 0 ? (
-                <p className="empty-state-inline">No activity yet.</p>
-              ) : (
-                recentActivity.map((entry) => (
-                  <div className="activity-item" key={entry.id}>
-                    <span className="feature-dot" aria-hidden="true" />
-                    <p>{describeActivity(entry)}</p>
-                  </div>
-                ))
-              )
+            {recentActivity.length === 0 ? (
+              <p className="empty-state-inline">No activity yet.</p>
             ) : (
-              adminActivity.map((activity) => (
-                <div className="activity-item" key={activity}>
+              recentActivity.map((entry) => (
+                <div className="activity-item" key={entry.id}>
                   <span className="feature-dot" aria-hidden="true" />
-                  <p>{activity}</p>
+                  <p>{describeActivity(entry)}</p>
                 </div>
               ))
             )}
@@ -370,59 +359,48 @@ export function AdminDashboard({
           {inviteMessage && <p className="auth-note">{inviteMessage}</p>}
 
           <div className="user-list">
-            {isLive ? (
-              isLoading ? (
-                <p className="empty-state-inline">Loading members…</p>
-              ) : (
-                members.map((member) => (
-                  <div className="user-row" key={member.id}>
-                    <span className="avatar-wrap">
-                      <span className="avatar">
-                        {(member.full_name || member.username || '?').slice(0, 2).toUpperCase()}
-                      </span>
-                      <span className={`status-dot${onlineUserIds.has(member.id) ? ' online' : ''}`} aria-hidden="true" />
-                    </span>
-                    <div>
-                      <strong>{member.full_name}</strong>
-                      <span>{member.username}</span>
-                    </div>
-                    {isAdmin && member.workspaceRole !== 'owner' && member.id !== currentUser.id ? (
-                      <div className="row-actions">
-                        <select
-                          aria-label={`Change role for ${member.full_name}`}
-                          className="role-select"
-                          onChange={(event) => handleRoleChange(member, event.target.value)}
-                          value={member.workspaceRole}
-                        >
-                          {MEMBER_ROLE_OPTIONS.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          className="text-button danger"
-                          onClick={() => handleRemoveMember(member)}
-                          type="button"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ) : (
-                      <em>{member.workspaceRole}</em>
-                    )}
-                  </div>
-                ))
-              )
+            {isLoading ? (
+              <p className="empty-state-inline">Loading members…</p>
+            ) : members.length === 0 ? (
+              <p className="empty-state-inline">No members yet.</p>
             ) : (
-              usersTable.map((user) => (
-                <div className="user-row" key={user.email}>
-                  <span className="avatar">{user.name.split(' ').map((part) => part[0]).join('')}</span>
+              members.map((member) => (
+                <div className="user-row" key={member.id}>
+                  <span className="avatar-wrap">
+                    <span className="avatar">
+                      {(member.full_name || member.username || '?').slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className={`status-dot${onlineUserIds.has(member.id) ? ' online' : ''}`} aria-hidden="true" />
+                  </span>
                   <div>
-                    <strong>{user.name}</strong>
-                    <span>{user.email}</span>
+                    <strong>{member.full_name}</strong>
+                    <span>{member.username}</span>
                   </div>
-                  <em>{isAdmin ? user.role : user.status}</em>
+                  {isAdmin && member.workspaceRole !== 'owner' && member.id !== currentUser.id ? (
+                    <div className="row-actions">
+                      <select
+                        aria-label={`Change role for ${member.full_name}`}
+                        className="role-select"
+                        onChange={(event) => handleRoleChange(member, event.target.value)}
+                        value={member.workspaceRole}
+                      >
+                        {MEMBER_ROLE_OPTIONS.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="text-button danger"
+                        onClick={() => handleRemoveMember(member)}
+                        type="button"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <em>{member.workspaceRole}</em>
+                  )}
                 </div>
               ))
             )}

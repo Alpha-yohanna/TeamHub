@@ -48,7 +48,7 @@ export function HomeSidebar({
     onNavigate?.(page)
   }
 
-  const isLiveApp = mode === 'app' && workspaces.length > 0
+  const hasWorkspaces = mode === 'app' && workspaces.length > 0
 
   return (
     <aside className="home-sidebar" aria-label="TeamHub home navigation">
@@ -64,23 +64,29 @@ export function HomeSidebar({
         <span>TeamHub</span>
       </a>
 
-      {isLiveApp ? (
+      {mode === 'app' ? (
         <div className="workspace-switcher-actions">
           <div className="workspace-pill workspace-switcher">
             <span className="workspace-avatar">{(activeWorkspace?.name || 'W').charAt(0).toUpperCase()}</span>
             <div>
-              <select
-                aria-label="Switch workspace"
-                onChange={(event) => onSwitchWorkspace?.(event.target.value)}
-                value={activeWorkspace?.id || ''}
-              >
-                {workspaces.map((workspace) => (
-                  <option key={workspace.id} value={workspace.id}>
-                    {workspace.name}
-                  </option>
-                ))}
-              </select>
-              <span>{activeWorkspace?.memberCount ?? 1} member{activeWorkspace?.memberCount === 1 ? '' : 's'}</span>
+              {hasWorkspaces ? (
+                <select
+                  aria-label="Switch workspace"
+                  onChange={(event) => onSwitchWorkspace?.(event.target.value)}
+                  value={activeWorkspace?.id || ''}
+                >
+                  {workspaces.map((workspace) => (
+                    <option key={workspace.id} value={workspace.id}>
+                      {workspace.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong>Loading workspace…</strong>
+              )}
+              {hasWorkspaces && (
+                <span>{activeWorkspace?.memberCount ?? 1} member{activeWorkspace?.memberCount === 1 ? '' : 's'}</span>
+              )}
             </div>
           </div>
           <button

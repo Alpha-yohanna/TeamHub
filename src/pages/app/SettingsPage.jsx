@@ -68,7 +68,7 @@ export function SettingsPage({ authSource, currentUser, onLogout, onProfileUpdat
         <div className="settings-content">
           {activeTab === 'profile' && <ProfileTab currentUser={currentUser} isLive={isLive} onProfileUpdated={onProfileUpdated} />}
           {activeTab === 'account' && (
-            <AccountTab currentUser={currentUser} isLive={isLive} onLogout={onLogout} workspace={workspace} workspaces={workspaces} />
+            <AccountTab currentUser={currentUser} onLogout={onLogout} workspace={workspace} workspaces={workspaces} />
           )}
           {activeTab === 'notifications' && <NotificationsTab currentUser={currentUser} isLive={isLive} />}
           {activeTab === 'appearance' && <AppearanceTab currentUser={currentUser} isLive={isLive} />}
@@ -194,7 +194,7 @@ function ProfileTab({ currentUser, isLive, onProfileUpdated }) {
   )
 }
 
-function AccountTab({ currentUser, isLive, onLogout, workspace, workspaces }) {
+function AccountTab({ currentUser, onLogout, workspace, workspaces }) {
   return (
     <article className="panel-card">
       <div className="panel-header">
@@ -206,7 +206,7 @@ function AccountTab({ currentUser, isLive, onLogout, workspace, workspaces }) {
           <span className="avatar">{(currentUser?.name || currentUser?.email || '?').slice(0, 2).toUpperCase()}</span>
           <div>
             <strong>{currentUser?.email}</strong>
-            <span>{isLive ? 'Active account' : 'Demo account'}</span>
+            <span>Active account</span>
           </div>
           <em>{workspace?.role ?? 'member'}</em>
         </div>

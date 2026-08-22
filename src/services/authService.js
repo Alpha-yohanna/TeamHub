@@ -1,12 +1,7 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { getProfile } from './workspaceService'
 
-const demoUser = {
-  id: 'demo-user',
-  name: 'Alpha Okafor',
-  email: 'admin@teamhub.app',
-  role: 'admin',
-}
+const NOT_CONFIGURED_MESSAGE = 'TeamHub is not connected to a database right now. Please contact your administrator.'
 
 async function buildSupabaseSession(authUser) {
   const profile = await getProfile(authUser.id)
@@ -28,10 +23,7 @@ async function buildSupabaseSession(authUser) {
 
 export async function signUpWithEmail({ email, password, fullName }) {
   if (!isSupabaseConfigured) {
-    return {
-      user: { ...demoUser, email, name: fullName || demoUser.name },
-      source: 'demo',
-    }
+    throw new Error(NOT_CONFIGURED_MESSAGE)
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -57,16 +49,9 @@ export async function signUpWithEmail({ email, password, fullName }) {
   return buildSupabaseSession(data.user)
 }
 
-export async function signInWithEmail({ email, password, role }) {
+export async function signInWithEmail({ email, password }) {
   if (!isSupabaseConfigured) {
-    return {
-      user: {
-        ...demoUser,
-        email,
-        role,
-      },
-      source: 'demo',
-    }
+    throw new Error(NOT_CONFIGURED_MESSAGE)
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({
