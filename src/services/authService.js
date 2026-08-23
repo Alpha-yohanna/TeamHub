@@ -1,3 +1,4 @@
+import { getAuthCallbackUrl } from '../lib/authRedirect'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { getProfile } from './workspaceService'
 
@@ -31,6 +32,7 @@ export async function signUpWithEmail({ email, password, fullName }) {
     password,
     options: {
       data: { full_name: fullName },
+      emailRedirectTo: getAuthCallbackUrl(),
     },
   })
 
@@ -47,6 +49,26 @@ export async function signUpWithEmail({ email, password, fullName }) {
   }
 
   return buildSupabaseSession(data.user)
+}
+
+// Lets someone re-request the signup confirmation email (link expired, email lost) without
+// creating a duplicate account.
+export async function resendSignUpEmail(email) {
+  if (!isSupabaseConfigured) {
+    throw new Error(NOT_CONFIGURED_MESSAGE)
+  }
+
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: getAuthCallbackUrl(),
+    },
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
 }
 
 export async function signInWithEmail({ email, password }) {

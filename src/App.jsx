@@ -10,6 +10,7 @@ import { NotificationsPage } from './pages/app/NotificationsPage'
 import { ProjectsPage } from './pages/app/ProjectsPage'
 import { SettingsPage } from './pages/app/SettingsPage'
 import { TeamsPage } from './pages/app/TeamsPage'
+import { AuthCallbackPage } from './pages/public/AuthCallbackPage'
 import { LoginPage } from './pages/public/LoginPage'
 import { applyTheme } from './lib/theme'
 import { getActiveSession, signOut } from './services/authService'
@@ -163,6 +164,17 @@ export default function App() {
     return unsubscribe
   }, [authSource, currentUser?.id, activeWorkspaceId])
 
+  async function handleAuthCallbackVerified(session) {
+    // Drop the /auth/callback path once we're done with it so the app renders the normal
+    // dashboard shell instead of re-matching the callback route on the next render.
+    window.history.replaceState(null, '', '/')
+    await handleLogin({
+      role: session.user.role || 'admin',
+      user: session.user,
+      source: session.source,
+    })
+  }
+
   async function handleLogin(session) {
     setRole(session.role)
     setCurrentUser(session.user)
@@ -219,6 +231,10 @@ export default function App() {
 
     setInitialFocus({ type: targetType, id: targetId, metadata: notification.metadata ?? {} })
     setPage(nextPage)
+  }
+
+  if (window.location.pathname.startsWith('/auth/callback')) {
+    return <AuthCallbackPage onVerified={handleAuthCallbackVerified} />
   }
 
   if (isRestoringSession) {

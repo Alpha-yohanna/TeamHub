@@ -66,7 +66,7 @@ export async function getUserPreferences(userId) {
   return (
     data ?? {
       user_id: userId,
-      theme: 'system',
+      theme: 'light',
       notify_mentions: true,
       notify_direct_messages: true,
       notify_task_assignments: true,

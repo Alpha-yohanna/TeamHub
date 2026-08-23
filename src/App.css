@@ -602,6 +602,97 @@
   letter-spacing: -0.01em;
 }
 
+.auth-status-block {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.auth-status-block h2 {
+  color: #0f172a;
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0.35rem 0 0;
+}
+
+.auth-status-block p {
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.auth-status-block p strong {
+  color: #0f172a;
+}
+
+.auth-status-actions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+/* Auth surfaces (login, check-email, verification) always render on a fixed white card
+   regardless of the app's dark/light preference, so secondary actions here use fixed light
+   colors rather than the --surface/--border/--strong theme variables the Button component's
+   secondary/ghost variants normally pull from — those would render as a near-black chip on this
+   white card whenever the signed-out visitor's OS or last saved preference is dark. */
+.auth-secondary-button.button-ghost,
+.auth-secondary-button.button-secondary {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.auth-secondary-button.button-ghost:hover,
+.auth-secondary-button.button-secondary:hover {
+  background: #eef2f8;
+}
+
+.auth-status-icon {
+  align-items: center;
+  border-radius: 999px;
+  display: grid;
+  font-size: 1.5rem;
+  font-weight: 800;
+  height: 3.25rem;
+  place-items: center;
+  width: 3.25rem;
+}
+
+.auth-status-icon-success {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.auth-status-icon-error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.auth-status-icon-info {
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 1.35rem;
+}
+
+.auth-spinner {
+  animation: auth-spin 0.8s linear infinite;
+  border: 3px solid #e2e8f0;
+  border-radius: 999px;
+  border-top-color: #2563eb;
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .auth-tabs {
   background: #f2f5fa;
   border: 1px solid #e7ebf2;

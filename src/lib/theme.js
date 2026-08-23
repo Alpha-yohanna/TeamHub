@@ -1,12 +1,15 @@
 const STORAGE_KEY = 'teamhub-theme'
 const VALID_THEMES = ['light', 'dark', 'system']
+// New users (nothing in localStorage yet) always start on light — the app must never default
+// a first-time visitor into dark mode based on OS preference.
+const DEFAULT_THEME = 'light'
 
 export function getStoredTheme() {
   try {
     const value = localStorage.getItem(STORAGE_KEY)
-    return VALID_THEMES.includes(value) ? value : 'system'
+    return VALID_THEMES.includes(value) ? value : DEFAULT_THEME
   } catch {
-    return 'system'
+    return DEFAULT_THEME
   }
 }
 

@@ -324,7 +324,7 @@ function NotificationsTab({ currentUser, isLive }) {
 }
 
 function AppearanceTab({ currentUser, isLive }) {
-  const [theme, setTheme] = useState('system')
+  const [theme, setTheme] = useState('light')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -336,7 +336,7 @@ function AppearanceTab({ currentUser, isLive }) {
     let isMounted = true
     getUserPreferences(currentUser.id)
       .then((data) => {
-        if (isMounted) setTheme(data.theme || 'system')
+        if (isMounted) setTheme(data.theme || 'light')
       })
       .catch((err) => {
         if (isMounted) setError(err.message)

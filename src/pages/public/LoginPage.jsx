@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { signInWithEmail, signUpWithEmail } from '../../services/authService'
+import { CheckEmailScreen } from './CheckEmailScreen'
 
 function EyeIcon({ open }) {
   if (open) {
@@ -56,21 +57,19 @@ export function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [infoMessage, setInfoMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState(null)
   const isSignUp = mode === 'signup'
 
   function switchMode(nextMode) {
     setMode(nextMode)
     setSignupIntent(null)
     setErrorMessage('')
-    setInfoMessage('')
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setErrorMessage('')
-    setInfoMessage('')
     setIsSubmitting(true)
 
     try {
@@ -91,8 +90,7 @@ export function LoginPage({ onLogin }) {
         : await signInWithEmail({ email, password })
 
       if (session.requiresEmailConfirmation) {
-        setInfoMessage('Account created. Check your email to confirm before logging in.')
-        setMode('login')
+        setPendingConfirmationEmail(session.user.email)
         return
       }
 
@@ -106,6 +104,18 @@ export function LoginPage({ onLogin }) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (pendingConfirmationEmail) {
+    return (
+      <CheckEmailScreen
+        email={pendingConfirmationEmail}
+        onBackToSignIn={() => {
+          setPendingConfirmationEmail(null)
+          switchMode('login')
+        }}
+      />
+    )
   }
 
   return (
@@ -233,7 +243,6 @@ export function LoginPage({ onLogin }) {
                 {errorMessage}
               </p>
             )}
-            {infoMessage && <p className="auth-note">{infoMessage}</p>}
 
             <Button className="full-button" disabled={isSubmitting} type="submit">
               {isSubmitting ? '...' : isSignUp ? 'Create account' : 'Log in'}

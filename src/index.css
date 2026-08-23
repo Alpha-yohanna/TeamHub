@@ -1,8 +1,8 @@
 :root {
-  --page: #f7f9fc;
+  --page: #ffffff;
   --surface: #ffffff;
-  --surface-muted: #eef3f9;
-  --border: #d9e2ef;
+  --surface-muted: #f4f6f9;
+  --border: #e2e8f0;
   --text: #334155;
   --muted: #64748b;
   --strong: #0f172a;
@@ -26,12 +26,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --page: #09111f;
-    --surface: #101a2b;
-    --surface-muted: #162338;
-    --border: #24344f;
-    --text: #cbd5e1;
-    --muted: #94a3b8;
+    --page: #000000;
+    --surface: #0a0a0a;
+    --surface-muted: #111111;
+    --border: #262626;
+    --text: #d4d4d8;
+    --muted: #a1a1aa;
     --strong: #f8fafc;
     --primary: #60a5fa;
     --primary-strong: #3b82f6;
@@ -40,7 +40,7 @@
     --success-soft: rgba(16, 185, 129, 0.12);
     --success-border: rgba(110, 231, 183, 0.22);
     --focus: rgba(96, 165, 250, 0.34);
-    --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+    --shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
   }
 }
 
@@ -49,12 +49,12 @@
    guaranteed — [data-theme] adds an attribute selector, so it always outranks the bare :root
    inside the media query. */
 :root[data-theme="dark"] {
-  --page: #09111f;
-  --surface: #101a2b;
-  --surface-muted: #162338;
-  --border: #24344f;
-  --text: #cbd5e1;
-  --muted: #94a3b8;
+  --page: #000000;
+  --surface: #0a0a0a;
+  --surface-muted: #111111;
+  --border: #262626;
+  --text: #d4d4d8;
+  --muted: #a1a1aa;
   --strong: #f8fafc;
   --primary: #60a5fa;
   --primary-strong: #3b82f6;
@@ -63,14 +63,14 @@
   --success-soft: rgba(16, 185, 129, 0.12);
   --success-border: rgba(110, 231, 183, 0.22);
   --focus: rgba(96, 165, 250, 0.34);
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
 }
 
 :root[data-theme="light"] {
-  --page: #f7f9fc;
+  --page: #ffffff;
   --surface: #ffffff;
-  --surface-muted: #eef3f9;
-  --border: #d9e2ef;
+  --surface-muted: #f4f6f9;
+  --border: #e2e8f0;
   --text: #334155;
   --muted: #64748b;
   --strong: #0f172a;
