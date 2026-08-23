@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Button } from '../../components/ui/Button'
-import { TeamHubMark } from '../../components/ui/Logo'
 import { signInWithEmail, signUpWithEmail } from '../../services/authService'
 
 function EyeIcon({ open }) {
@@ -118,7 +117,7 @@ export function LoginPage({ onLogin }) {
       <section className="auth-card" aria-labelledby="auth-title">
         <div className="auth-brand">
           <span className="auth-logo">
-            <TeamHubMark size={22} />
+            <img alt="TeamHub" height="34" src="/teamhub-logo.svg" width="34" />
           </span>
           <span id="auth-title" className="auth-wordmark">TeamHub</span>
         </div>
