@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Button } from '../../components/ui/Button'
 import { signInWithEmail, signUpWithEmail } from '../../services/authService'
-import { CheckEmailScreen } from './CheckEmailScreen'
 
 function EyeIcon({ open }) {
   if (open) {
@@ -58,7 +57,6 @@ export function LoginPage({ onLogin }) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState(null)
   const isSignUp = mode === 'signup'
 
   function switchMode(nextMode) {
@@ -76,8 +74,7 @@ export function LoginPage({ onLogin }) {
       if (isSignUp) {
         // Read on first authenticated load (App.jsx) to decide whether the auto-provisioned
         // workspace should surface the owner-setup wizard or stay out of the way for someone who
-        // said they're joining an existing team. Survives the email-confirmation redirect, since
-        // there's no session — and therefore no other place to carry this — until then.
+        // said they're joining an existing team.
         try {
           localStorage.setItem(SIGNUP_INTENT_STORAGE_KEY, signupIntent || 'create')
         } catch {
@@ -89,11 +86,6 @@ export function LoginPage({ onLogin }) {
         ? await signUpWithEmail({ email, password, fullName })
         : await signInWithEmail({ email, password })
 
-      if (session.requiresEmailConfirmation) {
-        setPendingConfirmationEmail(session.user.email)
-        return
-      }
-
       onLogin({
         role: session.user.role || 'admin',
         user: session.user,
@@ -104,18 +96,6 @@ export function LoginPage({ onLogin }) {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  if (pendingConfirmationEmail) {
-    return (
-      <CheckEmailScreen
-        email={pendingConfirmationEmail}
-        onBackToSignIn={() => {
-          setPendingConfirmationEmail(null)
-          switchMode('login')
-        }}
-      />
-    )
   }
 
   return (

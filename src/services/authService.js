@@ -1,4 +1,3 @@
-import { getAuthCallbackUrl } from '../lib/authRedirect'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { getProfile } from './workspaceService'
 
@@ -32,43 +31,29 @@ export async function signUpWithEmail({ email, password, fullName }) {
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: getAuthCallbackUrl(),
     },
   })
 
   if (error) {
     throw new Error(error.message)
   }
+
+  let authUser = data.user
 
   if (!data.session) {
-    return {
-      user: { id: data.user.id, email: data.user.email, name: fullName, role: 'owner' },
-      source: 'supabase',
-      requiresEmailConfirmation: true,
+    // Email confirmation is disabled for this Supabase project, so signUp() should already return
+    // a session. This is only a defensive fallback (e.g. if that project setting ever changes) —
+    // sign the user straight in rather than gating them behind a "check your inbox" screen.
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (signInError) {
+      throw new Error(signInError.message)
     }
+
+    authUser = signInData.user
   }
 
-  return buildSupabaseSession(data.user)
-}
-
-// Lets someone re-request the signup confirmation email (link expired, email lost) without
-// creating a duplicate account.
-export async function resendSignUpEmail(email) {
-  if (!isSupabaseConfigured) {
-    throw new Error(NOT_CONFIGURED_MESSAGE)
-  }
-
-  const { error } = await supabase.auth.resend({
-    type: 'signup',
-    email,
-    options: {
-      emailRedirectTo: getAuthCallbackUrl(),
-    },
-  })
-
-  if (error) {
-    throw new Error(error.message)
-  }
+  return buildSupabaseSession(authUser)
 }
 
 export async function signInWithEmail({ email, password }) {
