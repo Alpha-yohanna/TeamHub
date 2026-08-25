@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { HomeSidebar } from '../landing/HomeSidebar'
 import { GlobalSearch } from '../search/GlobalSearch'
+import { PWAInstallButton } from '../ui/PWAInstallButton'
 
 export function AppShell({
   activePage,
@@ -84,6 +85,7 @@ export function AppShell({
             <button className="search-button" onClick={() => setIsSearchOpen(true)} type="button">
               Search messages, files, people…
             </button>
+            <PWAInstallButton />
           </div>
         </header>
         {children}

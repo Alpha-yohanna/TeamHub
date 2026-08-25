@@ -96,6 +96,7 @@ body {
   margin: 0;
   min-width: 320px;
   overflow-wrap: anywhere;
+  overflow-x: hidden;
 }
 
 button,
