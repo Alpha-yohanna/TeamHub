@@ -905,6 +905,18 @@
   padding: 0.85rem;
 }
 
+.form-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.75rem;
+  color: #15803d;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0.85rem;
+}
+
 .auth-note {
   color: var(--muted);
   font-size: 0.88rem;

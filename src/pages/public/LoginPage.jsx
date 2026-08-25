@@ -56,6 +56,7 @@ export function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [infoMessage, setInfoMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSignUp = mode === 'signup'
 
@@ -63,11 +64,13 @@ export function LoginPage({ onLogin }) {
     setMode(nextMode)
     setSignupIntent(null)
     setErrorMessage('')
+    setInfoMessage('')
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
     setErrorMessage('')
+    setInfoMessage('')
     setIsSubmitting(true)
 
     try {
@@ -82,14 +85,24 @@ export function LoginPage({ onLogin }) {
         }
       }
 
-      const session = isSignUp
+      const result = isSignUp
         ? await signUpWithEmail({ email, password, fullName })
         : await signInWithEmail({ email, password })
 
+      if (result.status === 'confirmation_required') {
+        setInfoMessage(
+          `Account created successfully. We've sent a verification email to ${result.email}. Please check your inbox and click the verification link to continue.`,
+        )
+        setMode('login')
+        setSignupIntent(null)
+        setPassword('')
+        return
+      }
+
       onLogin({
-        role: session.user.role || 'admin',
-        user: session.user,
-        source: session.source,
+        role: result.user.role || 'admin',
+        user: result.user,
+        source: result.source,
       })
     } catch (error) {
       setErrorMessage(error.message || 'Something went wrong. Please try again.')
@@ -217,6 +230,12 @@ export function LoginPage({ onLogin }) {
                 <EyeIcon open={isPasswordVisible} />
               </button>
             </div>
+
+            {infoMessage && (
+              <p className="form-success" role="status">
+                {infoMessage}
+              </p>
+            )}
 
             {errorMessage && (
               <p className="form-error" role="alert">

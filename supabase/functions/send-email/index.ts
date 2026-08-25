@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
 
   const { user, email_data } = verified
   const template = TEMPLATES[email_data.email_action_type] ?? FALLBACK_TEMPLATE
-  const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${email_data.redirect_to}`
+  const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${encodeURIComponent(email_data.token_hash)}&type=${encodeURIComponent(email_data.email_action_type)}&redirect_to=${encodeURIComponent(email_data.redirect_to)}`
 
   const emailResponse = await fetch(RESEND_API_URL, {
     method: 'POST',

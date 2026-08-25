@@ -1,10 +1,24 @@
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
-import { getProfile } from './workspaceService'
+import { isSupabaseConfigured, supabase } from "../lib/supabaseClient";
+import { getProfile } from "./workspaceService";
 
-const NOT_CONFIGURED_MESSAGE = 'TeamHub is not connected to a database right now. Please contact your administrator.'
+const NOT_CONFIGURED_MESSAGE =
+  "TeamHub is not connected to a database right now. Please contact your administrator.";
 
+/**
+ * Build the TeamHub session from the authenticated Supabase user.
+ */
 async function buildSupabaseSession(authUser) {
-  const profile = await getProfile(authUser.id)
+  if (!authUser) {
+    throw new Error("No authenticated user was returned by Supabase.");
+  }
+
+  const profile = await getProfile(authUser.id);
+
+  if (!profile) {
+    throw new Error(
+      "Your account was created, but your TeamHub profile could not be loaded. Please try again.",
+    );
+  }
 
   return {
     user: {
@@ -17,109 +31,176 @@ async function buildSupabaseSession(authUser) {
       avatarUrl: profile.avatar_url,
       bio: profile.bio,
     },
-    source: 'supabase',
-  }
+    source: "supabase",
+  };
 }
 
+/**
+ * Create a new TeamHub account with email and password.
+ *
+ * Supabase only returns an active session immediately when email
+ * confirmation is disabled. With confirmation enabled (the intended,
+ * supported configuration for TeamHub), signUp() returns a user but
+ * no session — the account exists but is unverified until the user
+ * clicks the link in the confirmation email. That is not an error;
+ * callers should treat it as a "check your email" outcome, not a
+ * failure to sign in.
+ */
 export async function signUpWithEmail({ email, password, fullName }) {
   if (!isSupabaseConfigured) {
-    throw new Error(NOT_CONFIGURED_MESSAGE)
+    throw new Error(NOT_CONFIGURED_MESSAGE);
+  }
+
+  const cleanEmail = email.trim();
+  const cleanFullName = fullName.trim();
+
+  if (!cleanEmail) {
+    throw new Error("Please enter your email address.");
+  }
+
+  if (!cleanFullName) {
+    throw new Error("Please enter your full name.");
+  }
+
+  if (!password || password.length < 6) {
+    throw new Error("Password must be at least 6 characters long.");
   }
 
   const { data, error } = await supabase.auth.signUp({
-    email,
+    email: cleanEmail,
     password,
     options: {
-      data: { full_name: fullName },
+      data: {
+        full_name: cleanFullName,
+      },
     },
-  })
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
-  let authUser = data.user
+  if (!data?.user) {
+    throw new Error("Account could not be created. Please try again.");
+  }
 
   if (!data.session) {
-    // Email confirmation is disabled for this Supabase project, so signUp() should already return
-    // a session. This is only a defensive fallback (e.g. if that project setting ever changes) —
-    // sign the user straight in rather than gating them behind a "check your inbox" screen.
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (signInError) {
-      throw new Error(signInError.message)
-    }
-
-    authUser = signInData.user
+    return {
+      status: "confirmation_required",
+      email: cleanEmail,
+    };
   }
 
-  return buildSupabaseSession(authUser)
+  const session = await buildSupabaseSession(data.user);
+  return { status: "signed_in", ...session };
 }
 
+/**
+ * Sign in an existing TeamHub user.
+ */
 export async function signInWithEmail({ email, password }) {
   if (!isSupabaseConfigured) {
-    throw new Error(NOT_CONFIGURED_MESSAGE)
+    throw new Error(NOT_CONFIGURED_MESSAGE);
+  }
+
+  const cleanEmail = email.trim();
+
+  if (!cleanEmail) {
+    throw new Error("Please enter your email address.");
+  }
+
+  if (!password) {
+    throw new Error("Please enter your password.");
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: cleanEmail,
     password,
-  })
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
-  return buildSupabaseSession(data.user)
+  if (!data?.user) {
+    throw new Error("Unable to sign in. Please try again.");
+  }
+
+  const session = await buildSupabaseSession(data.user);
+  return { status: "signed_in", ...session };
 }
 
+/**
+ * Get the currently active Supabase session.
+ */
 export async function getActiveSession() {
   if (!isSupabaseConfigured) {
-    return null
+    return null;
   }
 
-  const { data, error } = await supabase.auth.getSession()
+  const { data, error } = await supabase.auth.getSession();
 
-  if (error || !data.session) {
-    return null
+  if (error || !data?.session) {
+    return null;
   }
 
-  return buildSupabaseSession(data.session.user)
+  try {
+    return await buildSupabaseSession(data.session.user);
+  } catch {
+    return null;
+  }
 }
 
+/**
+ * Sign out the current user.
+ */
 export async function signOut() {
   if (!isSupabaseConfigured) {
-    return
+    return;
   }
 
-  const { error } = await supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut();
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 }
 
+/**
+ * Change the currently authenticated user's password.
+ */
 export async function changePassword(newPassword) {
   if (!isSupabaseConfigured) {
-    throw new Error('Password changes require a live TeamHub account.')
+    throw new Error("Password changes require a live TeamHub account.");
   }
 
-  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Password must be at least 6 characters long.");
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 }
 
-// Signs out every active session for this account (all devices/browsers), not just this one.
+/**
+ * Sign out the user from every active session
+ * across all devices and browsers.
+ */
 export async function signOutEverywhere() {
   if (!isSupabaseConfigured) {
-    return
+    return;
   }
 
-  const { error } = await supabase.auth.signOut({ scope: 'global' })
+  const { error } = await supabase.auth.signOut({
+    scope: "global",
+  });
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 }
