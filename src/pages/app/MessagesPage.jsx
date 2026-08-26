@@ -358,9 +358,9 @@ export function MessagesPage({ currentUser, initialFocus, onFocusConsumed, works
                       required
                       value={newChannelName}
                     />
-                    <label style={{ alignItems: 'center', display: 'flex', fontSize: '0.8rem', gap: '0.3rem' }}>
+                    <label className="checkbox-field private-toggle" style={{ alignItems: 'center', display: 'flex', fontSize: '0.8rem', gap: '0.3rem' }}>
                       <input checked={newChannelPrivate} onChange={(event) => setNewChannelPrivate(event.target.checked)} type="checkbox" />
-                      Private
+                      <span>Private</span>
                     </label>
                     <Button type="submit">Create</Button>
                   </form>
@@ -452,7 +452,11 @@ export function MessagesPage({ currentUser, initialFocus, onFocusConsumed, works
                       {workspaceMembers
                         .filter((member) => member.id !== currentUser.id)
                         .map((member) => (
-                          <label key={member.id} style={{ alignItems: 'center', display: 'flex', fontSize: '0.82rem', gap: '0.4rem' }}>
+                          <label
+                            className="checkbox-field"
+                            key={member.id}
+                            style={{ alignItems: 'center', display: 'flex', fontSize: '0.82rem', gap: '0.4rem' }}
+                          >
                             <input
                               checked={groupMemberIds.includes(member.id)}
                               onChange={(event) =>
@@ -462,7 +466,7 @@ export function MessagesPage({ currentUser, initialFocus, onFocusConsumed, works
                               }
                               type="checkbox"
                             />
-                            {member.full_name}
+                            <span>{member.full_name}</span>
                           </label>
                         ))}
                     </div>
