@@ -7,6 +7,7 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
   const [mentioned, setMentioned] = useState(new Map())
   const [attachment, setAttachment] = useState(null)
   const [status, setStatus] = useState('idle')
+  const [errorMessage, setErrorMessage] = useState('')
   const [showEmoji, setShowEmoji] = useState(false)
   const [mentionQuery, setMentionQuery] = useState(null)
   const textareaRef = useRef(null)
@@ -39,8 +40,10 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
 
   async function handleSubmit(event) {
     event?.preventDefault?.()
+    if (status === 'sending') return
     if (!content.trim() && !attachment) return
     setStatus('sending')
+    setErrorMessage('')
 
     const mentionedUserIds = Array.from(mentioned.entries())
       .filter(([name]) => content.includes(`@${name}`))
@@ -53,8 +56,9 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
       setMentioned(new Map())
       setStatus('idle')
       onCancelEdit?.()
-    } catch {
+    } catch (err) {
       setStatus('failed')
+      setErrorMessage(err?.message || 'Message failed to send.')
     }
   }
 
@@ -143,7 +147,7 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
 
       {status === 'failed' && (
         <p className="composer-status failed">
-          Message failed to send.{' '}
+          {errorMessage || 'Message failed to send.'}{' '}
           <button onClick={handleSubmit} type="button">
             Retry
           </button>

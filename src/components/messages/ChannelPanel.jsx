@@ -35,20 +35,36 @@ export function ChannelPanel({
 }) {
   const [messages, setMessages] = useState([])
   const [error, setError] = useState('')
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true)
+  const [realtimeStatus, setRealtimeStatus] = useState('SUBSCRIBED')
   const [hasMore, setHasMore] = useState(false)
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [activeThreadMessage, setActiveThreadMessage] = useState(null)
   const messagesEndRef = useRef(null)
   const stackRef = useRef(null)
+  const isNearBottomRef = useRef(true)
+  const lastMessageIdRef = useRef(null)
+  const hasInitializedScrollRef = useRef(false)
 
   useEffect(() => {
     if (!channelId) {
       setMessages([])
+      setIsLoadingMessages(false)
       return
     }
 
     let isMounted = true
+
+    // Reset per-channel so a stale channel's messages/scroll state never bleed into the next
+    // one while the new channel's history is still loading.
+    setMessages([])
+    setError('')
+    setIsLoadingMessages(true)
+    setRealtimeStatus('SUBSCRIBED')
+    isNearBottomRef.current = true
+    lastMessageIdRef.current = null
+    hasInitializedScrollRef.current = false
 
     listMessages(channelId, { limit: 40 })
       .then((data) => {
@@ -59,6 +75,9 @@ export function ChannelPanel({
       })
       .catch((err) => {
         if (isMounted) setError(err.message)
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingMessages(false)
       })
 
     const unsubscribeMessages = subscribeToChannelMessages(channelId, {
@@ -101,6 +120,9 @@ export function ChannelPanel({
           )
         )
       },
+      onStatusChange: (status) => {
+        if (isMounted) setRealtimeStatus(status)
+      },
     })
 
     const unsubscribeReactions = subscribeToReactions((payload) => {
@@ -135,8 +157,32 @@ export function ChannelPanel({
   }, [channelId, currentUser.id, currentUser.name])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages.length])
+    if (messages.length === 0) return
+    const newLastId = messages[messages.length - 1].id
+    const isNewestAppend = newLastId !== lastMessageIdRef.current
+    lastMessageIdRef.current = newLastId
+
+    if (!hasInitializedScrollRef.current) {
+      // First paint of this channel's history — jump straight to the newest message.
+      hasInitializedScrollRef.current = true
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
+      return
+    }
+
+    // Older messages get prepended (same last id) and already preserve scroll position
+    // themselves in handleLoadOlder — only a genuinely new message at the end should move the
+    // view, and only if the reader was already near the bottom (not mid-scroll through history).
+    if (isNewestAppend && isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages])
+
+  function handleStackScroll() {
+    const el = stackRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    isNearBottomRef.current = distanceFromBottom < 120
+  }
 
   async function handleLoadOlder() {
     if (messages.length === 0) return
@@ -275,14 +321,22 @@ export function ChannelPanel({
           </p>
         )}
 
-        <div className="msg-stack" ref={stackRef}>
+        {(realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT') && (
+          <p className="form-error" role="alert">
+            Live updates are temporarily unavailable. Reopen this conversation to see new messages.
+          </p>
+        )}
+
+        <div className="msg-stack" onScroll={handleStackScroll} ref={stackRef}>
           {hasMore && (
             <button className="load-older-button" disabled={isLoadingOlder} onClick={handleLoadOlder} type="button">
               {isLoadingOlder ? 'Loading…' : 'Load older messages'}
             </button>
           )}
 
-          {messages.length === 0 ? (
+          {isLoadingMessages ? (
+            <p className="empty-state-inline">Loading messages…</p>
+          ) : messages.length === 0 ? (
             <p className="empty-state-inline">No messages yet. Start the conversation.</p>
           ) : (
             messages.map((message, index) =>

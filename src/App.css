@@ -2850,19 +2850,56 @@
   }
 }
 
-/* Mobile fix — the "Private" channel checkbox and the group-member checkboxes were inheriting
-   .inline-form's input sizing (flex: 1 1 200px, min-height: 2.6rem, padding), which rendered
-   each checkbox as a large empty box. With the checkbox eating most of the row, the label text
-   next to it got squeezed into almost no space, and the global `overflow-wrap: anywhere` on
-   body then let it break character-by-character. Resetting the checkbox to a normal size and
-   keeping its label on one non-wrapping row fixes both forms; desktop is untouched since this
-   only applies below tablet width.
+/* Bug fix (all widths, not just mobile) — the "Private" channel checkbox and the group-member
+   checkboxes were inheriting .inline-form's input sizing (flex: 1 1 200px, min-height: 2.6rem,
+   padding), which rendered each checkbox as a large empty box. With the checkbox eating most of
+   the row — including on desktop's fixed 280px sidebar column — the label text next to it got
+   squeezed into almost no space, and the global `overflow-wrap: anywhere` on body then let it
+   break character-by-character. Resetting the checkbox to a normal size and keeping its label on
+   one non-wrapping row fixes this at every breakpoint. Once the checkbox shrinks, flex-wrap would
+   otherwise let the Create/Create group button share a row with it instead of keeping its own
+   full-width row, so that reset applies unconditionally too. */
+.conversation-sidebar .inline-form input[type='checkbox'] {
+  background: none;
+  border: 0;
+  flex: 0 0 auto;
+  height: 1.15rem;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  width: 1.15rem;
+}
 
-   Separately, .conversation-sidebar (a grid item) and .conversation-section (a flex item inside
-   it) had no min-width: 0, so their automatic minimum size followed the channel-name input's own
-   flex-basis all the way up the chain, forcing the whole sidebar wider than the viewport and
-   pushing content (like the Private row) off-screen since body clips overflow-x. This is the
-   same min-width: 0 fix already used on .conversation-item-body elsewhere in this file. */
+.conversation-sidebar .checkbox-field {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.conversation-sidebar .checkbox-field.private-toggle {
+  width: fit-content;
+}
+
+.conversation-sidebar .checkbox-field span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-sidebar .inline-form .button {
+  width: 100%;
+}
+
+/* Mobile-only — .conversation-sidebar (a grid item) and .conversation-section (a flex item
+   inside it) had no min-width: 0, so their automatic minimum size followed the channel-name
+   input's own flex-basis all the way up the chain, forcing the whole sidebar wider than the
+   viewport and pushing content off-screen since body clips overflow-x. Desktop's sidebar column
+   is a fixed 280px (not a flexible track), so it isn't subject to this same blowout and doesn't
+   need it. This is the same min-width: 0 fix already used on .conversation-item-body elsewhere
+   in this file. */
 @media (max-width: 768px) {
   .conversation-sidebar,
   .conversation-section {
@@ -2872,39 +2909,41 @@
   .conversation-sidebar .inline-form input:not([type='checkbox']) {
     min-width: 0;
   }
+}
 
-  .conversation-sidebar .inline-form input[type='checkbox'] {
-    background: none;
-    border: 0;
-    flex: 0 0 auto;
-    height: 1.15rem;
-    margin: 0;
-    min-height: 0;
-    padding: 0;
-    width: 1.15rem;
+/* Mobile fix — the composer row (emoji, attachment, textarea, Send) had two problems below
+   580px: (1) the textarea had no min-width: 0, so its default intrinsic minimum could refuse to
+   shrink on narrow screens, and (2) the site's generic `.button { width: 100% }` rule (further
+   below, meant for the landing page's hero/auth buttons) also matches the Send button, since
+   Button renders the shared .button class everywhere — with flex-basis: auto, that width: 100%
+   becomes the Send button's flex-basis too, so it claimed the whole row and squeezed the
+   textarea to nothing. Restoring width: auto here (higher specificity than the bare .button
+   rule) and giving the textarea room fixes both; desktop is unaffected since neither rule
+   applies above these breakpoints. */
+@media (max-width: 768px) {
+  .composer-box {
+    flex-wrap: nowrap;
   }
 
-  .conversation-sidebar .checkbox-field {
-    align-items: center;
-    display: flex;
+  .composer-box textarea {
+    min-width: 0;
+  }
+
+  .composer-icon-button {
     flex: 0 0 auto;
-    gap: 0.5rem;
+  }
+
+  .composer-box .button {
+    flex: 0 0 auto;
     white-space: nowrap;
+    width: auto;
   }
 
-  .conversation-sidebar .checkbox-field.private-toggle {
-    width: fit-content;
-  }
-
-  .conversation-sidebar .checkbox-field span {
+  .composer-attachment-preview span {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .conversation-sidebar .inline-form .button {
-    width: 100%;
   }
 }
 

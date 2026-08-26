@@ -477,7 +477,7 @@ export async function searchMessages(workspaceId, queryText, limit = 20) {
 
 // --- Realtime ---
 
-export function subscribeToChannelMessages(channelId, { onInsert, onUpdate } = {}) {
+export function subscribeToChannelMessages(channelId, { onInsert, onUpdate, onStatusChange } = {}) {
   // Unique per call (not just per channelId) — ChannelPanel and ThreadPanel can both be
   // subscribed to the same channelId at once (main view + open thread), and supabase-js throws
   // if a second .on() is attached to an already-.subscribe()'d channel of the same topic name.
@@ -493,7 +493,7 @@ export function subscribeToChannelMessages(channelId, { onInsert, onUpdate } = {
       { event: 'UPDATE', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
       (payload) => onUpdate?.(payload.new)
     )
-    .subscribe()
+    .subscribe((status) => onStatusChange?.(status))
 
   return () => {
     supabase.removeChannel(channel)
