@@ -2764,6 +2764,50 @@
   }
 }
 
+/* Phone-width tightening for the admin/member dashboard — the 900px breakpoint above already
+   stacks the topbar and drops the stat grid to one column; below this width that single column
+   of full-padding stat cards reads as too much empty space, so give it a compact 2-up grid and
+   trim the topbar's internal gaps instead. Desktop and tablet (>640px) are untouched. */
+@media (max-width: 640px) {
+  .app-topbar {
+    gap: 0.65rem;
+    padding: 0.85rem;
+  }
+
+  .app-topbar .preview-label {
+    margin-bottom: 0.35rem;
+  }
+
+  .admin-dashboard-page {
+    gap: 1rem;
+  }
+
+  .admin-dashboard-page .page-heading {
+    gap: 0.65rem;
+  }
+
+  .admin-dashboard-page .page-heading p {
+    margin-top: 0.5rem;
+  }
+
+  .stats-grid {
+    gap: 0.65rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.85rem;
+    padding: 0.85rem;
+  }
+
+  .stat-card strong {
+    font-size: 1.6rem;
+    margin: 0.35rem 0 0;
+  }
+}
+
 .mobile-back-button {
   display: none;
 }

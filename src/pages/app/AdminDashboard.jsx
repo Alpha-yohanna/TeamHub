@@ -237,7 +237,7 @@ export function AdminDashboard({
       : []
 
   return (
-    <section className="dashboard-page" aria-labelledby="dashboard-title">
+    <section className="dashboard-page admin-dashboard-page" aria-labelledby="dashboard-title">
       <div className="page-heading">
         <div>
           <p className="eyebrow">{isAdmin ? 'Admin dashboard' : 'Member dashboard'}</p>
