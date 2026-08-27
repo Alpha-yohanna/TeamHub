@@ -1,9 +1,11 @@
 import { supabase } from '../lib/supabaseClient'
 
 const PROJECT_SELECT =
-  'id, name, description, status, start_date, due_date, created_at, updated_at, archived_at, owner_id, team_id, profiles!owner_id (id, full_name, username, avatar_url), teams (id, name), project_members (id)'
+  'id, name, description, status, start_date, due_date, created_at, updated_at, archived_at, owner_id, team_id, profiles!owner_id (id, full_name, username, avatar_url), teams (id, name), project_members (id), tasks (id, status)'
 
 function mapProject(project) {
+  const taskRows = project.tasks ?? []
+  const completedTaskCount = taskRows.filter((task) => task.status === 'completed').length
   return {
     id: project.id,
     name: project.name,
@@ -19,6 +21,9 @@ function mapProject(project) {
     teamId: project.team_id,
     teamName: project.teams?.name ?? null,
     memberCount: project.project_members?.length ?? 0,
+    taskCount: taskRows.length,
+    completedTaskCount,
+    progressPercent: taskRows.length > 0 ? Math.round((completedTaskCount / taskRows.length) * 100) : 0,
   }
 }
 
@@ -155,7 +160,11 @@ export async function getProjectTaskCounts(projectId) {
 export async function getWorkspaceProjectStats(workspaceId) {
   const [totalProjects, activeProjects, openTasks, completedTasks] = await Promise.all([
     supabase.from('projects').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId),
-    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active'),
+    supabase
+      .from('projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .not('status', 'in', '(completed,archived)'),
     supabase
       .from('tasks')
       .select('id', { count: 'exact', head: true })

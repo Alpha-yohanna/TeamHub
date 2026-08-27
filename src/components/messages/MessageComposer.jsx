@@ -1,8 +1,17 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../ui/Button'
 import { EMOJI_PALETTE } from './emojiPalette'
 
-export function MessageComposer({ placeholder, members, initialValue = '', isEditing = false, onSubmit, onCancelEdit }) {
+export function MessageComposer({
+  placeholder,
+  members,
+  initialValue = '',
+  isEditing = false,
+  onSubmit,
+  onCancelEdit,
+  replyingTo = null,
+  onCancelReply,
+}) {
   const [content, setContent] = useState(initialValue)
   const [mentioned, setMentioned] = useState(new Map())
   const [attachment, setAttachment] = useState(null)
@@ -12,6 +21,10 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
   const [mentionQuery, setMentionQuery] = useState(null)
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    if (replyingTo) textareaRef.current?.focus()
+  }, [replyingTo])
 
   function handleChange(event) {
     const value = event.target.value
@@ -50,7 +63,7 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
       .map(([, id]) => id)
 
     try {
-      await onSubmit({ content: content.trim(), mentionedUserIds, attachment })
+      await onSubmit({ content: content.trim(), mentionedUserIds, attachment, replyToMessageId: replyingTo?.id ?? null })
       setContent('')
       setAttachment(null)
       setMentioned(new Map())
@@ -69,6 +82,9 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
     }
     if (event.key === 'Escape' && isEditing) {
       onCancelEdit?.()
+    }
+    if (event.key === 'Escape' && !isEditing && replyingTo) {
+      onCancelReply?.()
     }
   }
 
@@ -96,6 +112,18 @@ export function MessageComposer({ placeholder, members, initialValue = '', isEdi
               {emoji}
             </button>
           ))}
+        </div>
+      )}
+
+      {replyingTo && (
+        <div className="composer-reply-preview">
+          <div>
+            <strong>↩ Replying to {replyingTo.sender?.full_name ?? 'Member'}</strong>
+            <span>{replyingTo.deletedAt ? 'Original message was deleted' : replyingTo.content || 'Sent an attachment'}</span>
+          </div>
+          <button aria-label="Cancel reply" className="text-button" onClick={onCancelReply} type="button">
+            ×
+          </button>
         </div>
       )}
 

@@ -41,11 +41,14 @@ export function ChannelPanel({
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [activeThreadMessage, setActiveThreadMessage] = useState(null)
+  const [replyingToMessage, setReplyingToMessage] = useState(null)
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null)
   const messagesEndRef = useRef(null)
   const stackRef = useRef(null)
   const isNearBottomRef = useRef(true)
   const lastMessageIdRef = useRef(null)
   const hasInitializedScrollRef = useRef(false)
+  const highlightTimeoutRef = useRef(null)
 
   useEffect(() => {
     if (!channelId) {
@@ -55,6 +58,8 @@ export function ChannelPanel({
     }
 
     let isMounted = true
+    let retryTimeoutId = null
+    let unsubscribeMessages = () => {}
 
     // Reset per-channel so a stale channel's messages/scroll state never bleed into the next
     // one while the new channel's history is still loading.
@@ -80,50 +85,74 @@ export function ChannelPanel({
         if (isMounted) setIsLoadingMessages(false)
       })
 
-    const unsubscribeMessages = subscribeToChannelMessages(channelId, {
-      onInsert: (row) => {
-        if (row.parent_message_id) return
-        setMessages((prev) => {
-          if (prev.some((message) => message.id === row.id)) return prev
-          return [
-            ...prev,
-            {
-              id: row.id,
-              channelId: row.channel_id,
-              content: row.content,
-              createdAt: row.created_at,
-              editedAt: row.edited_at,
-              deletedAt: row.deleted_at,
-              parentMessageId: row.parent_message_id,
-              replyCount: row.reply_count ?? 0,
-              senderId: row.sender_id,
-              sender:
-                row.sender_id === currentUser.id
-                  ? { id: currentUser.id, full_name: currentUser.name }
-                  : (members.find((member) => member.id === row.sender_id) ?? null),
-              reactions: [],
-              mentionedUserIds: [],
-              attachments: [],
-            },
-          ]
-        })
-        if (row.sender_id !== currentUser.id) {
-          markChannelRead({ channelId, userId: currentUser.id }).catch(() => {})
-        }
-      },
-      onUpdate: (row) => {
-        setMessages((prev) =>
-          prev.map((message) =>
-            message.id === row.id
-              ? { ...message, content: row.content, editedAt: row.edited_at, deletedAt: row.deleted_at, replyCount: row.reply_count ?? message.replyCount }
-              : message
+    // The channel subscribe callback can report CHANNEL_ERROR/TIMED_OUT on a transient socket
+    // drop, but nothing previously re-established it afterward — the UI just showed a dead
+    // banner until the user manually reopened the conversation (a full remount). Retrying here
+    // re-creates the subscription once the client's socket recovers, instead of requiring that
+    // manual step.
+    function startMessagesSubscription() {
+      unsubscribeMessages = subscribeToChannelMessages(channelId, {
+        onInsert: (row) => {
+          setMessages((prev) => {
+            if (prev.some((message) => message.id === row.id)) return prev
+            // postgres_changes payloads are raw rows with no joins, so a live reply can't carry
+            // its quoted original the way a fetched/sent message can — look it up from what's
+            // already loaded (true for the normal case of replying to a recent, visible message).
+            const parent = row.parent_message_id ? prev.find((message) => message.id === row.parent_message_id) : null
+            return [
+              ...prev,
+              {
+                id: row.id,
+                channelId: row.channel_id,
+                content: row.content,
+                createdAt: row.created_at,
+                editedAt: row.edited_at,
+                deletedAt: row.deleted_at,
+                parentMessageId: row.parent_message_id,
+                replyTo: parent
+                  ? { id: parent.id, content: parent.content, deletedAt: parent.deletedAt, senderId: parent.senderId, senderName: parent.sender?.full_name ?? 'Member' }
+                  : row.parent_message_id
+                    ? { id: row.parent_message_id, content: null, deletedAt: null, senderId: null, senderName: 'Original message' }
+                    : null,
+                replyCount: row.reply_count ?? 0,
+                senderId: row.sender_id,
+                sender:
+                  row.sender_id === currentUser.id
+                    ? { id: currentUser.id, full_name: currentUser.name }
+                    : (members.find((member) => member.id === row.sender_id) ?? null),
+                reactions: [],
+                mentionedUserIds: [],
+                attachments: [],
+              },
+            ]
+          })
+          if (row.sender_id !== currentUser.id) {
+            markChannelRead({ channelId, userId: currentUser.id }).catch(() => {})
+          }
+        },
+        onUpdate: (row) => {
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.id === row.id
+                ? { ...message, content: row.content, editedAt: row.edited_at, deletedAt: row.deleted_at, replyCount: row.reply_count ?? message.replyCount }
+                : message
+            )
           )
-        )
-      },
-      onStatusChange: (status) => {
-        if (isMounted) setRealtimeStatus(status)
-      },
-    })
+        },
+        onStatusChange: (status) => {
+          if (!isMounted) return
+          setRealtimeStatus(status)
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            unsubscribeMessages()
+            retryTimeoutId = setTimeout(() => {
+              if (isMounted) startMessagesSubscription()
+            }, 3000)
+          }
+        },
+      })
+    }
+
+    startMessagesSubscription()
 
     const unsubscribeReactions = subscribeToReactions((payload) => {
       const messageId = payload.new?.message_id ?? payload.old?.message_id
@@ -150,6 +179,8 @@ export function ChannelPanel({
 
     return () => {
       isMounted = false
+      if (retryTimeoutId) clearTimeout(retryTimeoutId)
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
       unsubscribeMessages()
       unsubscribeReactions()
     }
@@ -176,6 +207,15 @@ export function ChannelPanel({
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages])
+
+  function handleJumpToMessage(messageId) {
+    const node = stackRef.current?.querySelector(`[data-message-id="${messageId}"]`)
+    if (!node) return
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
+    setHighlightedMessageId(messageId)
+    highlightTimeoutRef.current = setTimeout(() => setHighlightedMessageId(null), 1600)
+  }
 
   function handleStackScroll() {
     const el = stackRef.current
@@ -205,13 +245,14 @@ export function ChannelPanel({
     }
   }
 
-  async function handleSend({ content, mentionedUserIds, attachment }) {
+  async function handleSend({ content, mentionedUserIds, attachment, replyToMessageId }) {
     const sent = await sendMessage({
       workspaceId,
       channelId,
       senderId: currentUser.id,
       content: content || null,
       mentionedUserIds,
+      parentMessageId: replyToMessageId || null,
     })
     // Upsert rather than skip-if-exists: the realtime INSERT event for this same message can
     // arrive before this await resolves, adding a bare-row placeholder with no mentions/
@@ -220,6 +261,7 @@ export function ChannelPanel({
       const exists = prev.some((message) => message.id === sent.id)
       return exists ? prev.map((message) => (message.id === sent.id ? sent : message)) : [...prev, sent]
     })
+    setReplyingToMessage(null)
 
     if (attachment) {
       const uploaded = await uploadFile({ workspaceId, uploadedBy: currentUser.id, file: attachment, messageId: sent.id })
@@ -355,14 +397,16 @@ export function ChannelPanel({
                 <MessageItem
                   currentUser={currentUser}
                   isGrouped={shouldGroup(message, messages[index - 1])}
+                  isHighlighted={highlightedMessageId === message.id}
                   key={message.id}
                   members={members}
                   message={message}
                   onDelete={handleDelete}
                   onDownloadAttachment={handleDownloadAttachment}
                   onEdit={(msg) => setEditingMessageId(msg.id)}
+                  onJumpToMessage={handleJumpToMessage}
                   onOpenThread={setActiveThreadMessage}
-                  onReply={setActiveThreadMessage}
+                  onReply={setReplyingToMessage}
                   onToggleReaction={handleToggleReaction}
                 />
               )
@@ -372,7 +416,13 @@ export function ChannelPanel({
         </div>
 
         {channelId && (
-          <MessageComposer members={members} onSubmit={handleSend} placeholder={`Message #${channelName ?? ''}`} />
+          <MessageComposer
+            members={members}
+            onCancelReply={() => setReplyingToMessage(null)}
+            onSubmit={handleSend}
+            placeholder={`Message #${channelName ?? ''}`}
+            replyingTo={replyingToMessage}
+          />
         )}
       </div>
 

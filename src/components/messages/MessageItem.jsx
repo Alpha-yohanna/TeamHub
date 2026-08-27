@@ -35,12 +35,15 @@ export function MessageItem({
   currentUser,
   members,
   isGrouped,
+  isHighlighted = false,
   showThreadIndicator = true,
+  showQuotePreview = true,
   onReply,
   onToggleReaction,
   onEdit,
   onDelete,
   onOpenThread,
+  onJumpToMessage,
   onDownloadAttachment,
 }) {
   const [showReactionPicker, setShowReactionPicker] = useState(false)
@@ -48,7 +51,7 @@ export function MessageItem({
   const canModify = message.senderId === currentUser.id
 
   return (
-    <div className="msg-group">
+    <div className={`msg-group${isHighlighted ? ' highlighted' : ''}`} data-message-id={message.id}>
       {!isGrouped ? (
         <span className="avatar">{(message.sender?.full_name || '?').slice(0, 2).toUpperCase()}</span>
       ) : (
@@ -61,6 +64,13 @@ export function MessageItem({
             <strong>{message.sender?.full_name || 'Member'}</strong>
             <time>{formatTime(message.createdAt)}</time>
           </div>
+        )}
+
+        {showQuotePreview && message.replyTo && (
+          <button className="msg-quote-preview" onClick={() => onJumpToMessage?.(message.replyTo.id)} type="button">
+            <strong>↩ {message.replyTo.senderName}</strong>
+            <span>{message.replyTo.deletedAt ? 'Original message was deleted' : message.replyTo.content || 'Sent an attachment'}</span>
+          </button>
         )}
 
         <div className={`msg-item${isDeleted ? ' deleted' : ''}`}>
@@ -125,11 +135,9 @@ export function MessageItem({
               ))}
             </div>
           )}
-          {!message.parentMessageId && (
-            <button onClick={() => onReply(message)} title="Reply in thread" type="button">
-              ↩
-            </button>
-          )}
+          <button onClick={() => onReply(message)} title="Reply" type="button">
+            ↩
+          </button>
           {canModify && (
             <button onClick={() => onEdit(message)} title="Edit" type="button">
               ✎

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { HomeSidebar } from '../landing/HomeSidebar'
 import { GlobalSearch } from '../search/GlobalSearch'
 import { PWAInstallButton } from '../ui/PWAInstallButton'
+import { SearchIcon } from '../ui/NavIcons'
+
+const isAppleClient = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? navigator.userAgent ?? '')
 
 export function AppShell({
   activePage,
@@ -83,7 +86,11 @@ export function AppShell({
           </div>
           <div className="topbar-actions">
             <button className="search-button" onClick={() => setIsSearchOpen(true)} type="button">
-              Search messages, files, people…
+              <SearchIcon aria-hidden="true" height="16" width="16" />
+              <span>Search messages, files, people…</span>
+              <kbd className="search-shortcut-hint" aria-hidden="true">
+                {isAppleClient ? '⌘K' : 'Ctrl K'}
+              </kbd>
             </button>
             <PWAInstallButton />
           </div>

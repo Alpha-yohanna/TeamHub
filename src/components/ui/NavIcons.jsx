@@ -72,6 +72,24 @@ export function ActivityIcon(props) {
   )
 }
 
+export function SearchIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M20 20l-4.3-4.3" />
+    </svg>
+  )
+}
+
+export function LockIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <rect height="10" rx="1.8" width="14" x="5" y="10" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </svg>
+  )
+}
+
 export function SettingsIcon(props) {
   return (
     <svg height="18" width="18" {...commonProps} {...props}>

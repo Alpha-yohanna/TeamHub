@@ -380,7 +380,14 @@ export function MessagesPage({ currentUser, initialFocus, onFocusConsumed, works
                           {channel.is_private ? '🔒 ' : '# '}
                           {channel.name}
                         </strong>
-                        <span>{channel.teamName ? `Team · ${channel.teamName}` : channel.description || 'No description'}</span>
+                        <span>
+                          {[
+                            channel.is_private ? 'Private' : null,
+                            channel.teamName ? `Team · ${channel.teamName}` : channel.description,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') || 'No description'}
+                        </span>
                       </div>
                       {channel.unreadCount > 0 && <span className="unread-badge">{channel.unreadCount}</span>}
                     </button>

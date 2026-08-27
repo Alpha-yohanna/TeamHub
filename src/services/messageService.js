@@ -1,7 +1,10 @@
 import { supabase } from '../lib/supabaseClient'
 
+// reply_to embeds the original message a reply points to, via the existing parent_message_id
+// self-reference — reused as-is rather than adding a new column, since it already models exactly
+// this relationship (it previously only powered the separate thread-panel view).
 const MESSAGE_SELECT =
-  'id, channel_id, content, created_at, edited_at, deleted_at, parent_message_id, reply_count, sender_id, profiles!sender_id (id, full_name, username, avatar_url), message_reactions (id, user_id, emoji), message_mentions (mentioned_user_id), files (id, name, mime_type, size_bytes, storage_path)'
+  'id, channel_id, content, created_at, edited_at, deleted_at, parent_message_id, reply_count, sender_id, profiles!sender_id (id, full_name, username, avatar_url), message_reactions (id, user_id, emoji), message_mentions (mentioned_user_id), files (id, name, mime_type, size_bytes, storage_path), reply_to:messages!parent_message_id (id, content, deleted_at, sender_id, profiles!sender_id (full_name))'
 
 function groupReactions(rows) {
   const map = new Map()
@@ -10,6 +13,17 @@ function groupReactions(rows) {
     map.get(reaction.emoji).push(reaction.user_id)
   }
   return Array.from(map.entries()).map(([emoji, userIds]) => ({ emoji, userIds }))
+}
+
+function mapReplyTo(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    content: row.deleted_at ? null : row.content,
+    deletedAt: row.deleted_at,
+    senderId: row.sender_id,
+    senderName: row.profiles?.full_name ?? 'Member',
+  }
 }
 
 function mapMessage(row) {
@@ -21,6 +35,7 @@ function mapMessage(row) {
     editedAt: row.edited_at,
     deletedAt: row.deleted_at,
     parentMessageId: row.parent_message_id,
+    replyTo: mapReplyTo(row.reply_to),
     replyCount: row.reply_count,
     senderId: row.sender_id,
     sender: row.profiles ?? null,
@@ -216,7 +231,6 @@ export async function listConversations(workspaceId, userId) {
       .from('messages')
       .select('channel_id, content, created_at, sender_id, deleted_at')
       .in('channel_id', channelIds)
-      .is('parent_message_id', null)
       .order('created_at', { ascending: false }),
     getChannelUnreadCounts(channelIds, userId),
   ])
@@ -283,7 +297,6 @@ export async function getChannelUnreadCounts(channelIds, userId) {
         .select('id', { count: 'exact', head: true })
         .eq('channel_id', channelId)
         .neq('sender_id', userId)
-        .is('parent_message_id', null)
 
       const since = readMap.get(channelId)
       if (since) {
@@ -329,11 +342,13 @@ export async function listRecentWorkspaceMessages(workspaceId, limit = 5) {
 }
 
 export async function listMessages(channelId, { limit = 40, before } = {}) {
+  // Replies (parent_message_id set) are now shown inline in the main timeline with a quoted
+  // reference to their original message, in addition to remaining visible in the focused
+  // thread view (listThreadReplies) — so this no longer excludes them.
   let query = supabase
     .from('messages')
     .select(MESSAGE_SELECT)
     .eq('channel_id', channelId)
-    .is('parent_message_id', null)
     .order('created_at', { ascending: false })
     .limit(limit)
 

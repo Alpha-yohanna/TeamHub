@@ -20,6 +20,31 @@ import './App.css'
 
 const SIGNUP_INTENT_STORAGE_KEY = 'teamhub-signup-intent'
 
+// activeWorkspaceId was previously pure in-memory React state: every full reload re-derived a
+// default from scratch instead of remembering which workspace the user actually navigated to,
+// so a manual switch (via the workspace selector) never survived a refresh — the next load would
+// silently re-guess and could land back on a different workspace than the one just chosen.
+// Persisting the choice per-user fixes that without needing to guess correctly every time.
+function activeWorkspaceStorageKey(userId) {
+  return `teamhub-active-workspace:${userId}`
+}
+
+function readPersistedWorkspaceId(userId) {
+  try {
+    return localStorage.getItem(activeWorkspaceStorageKey(userId))
+  } catch {
+    return null
+  }
+}
+
+function persistActiveWorkspaceId(userId, workspaceId) {
+  try {
+    localStorage.setItem(activeWorkspaceStorageKey(userId), workspaceId)
+  } catch {
+    // Ignore storage errors (private browsing, disabled storage) — falls back to in-memory only.
+  }
+}
+
 // A "join a workspace" signup still gets the auto-provisioned personal workspace from
 // handle_new_user() (the existing, unchanged signup trigger) — this marks it already-onboarded so
 // the owner-setup wizard doesn't intercept someone who came here to accept an invitation, which
@@ -70,6 +95,19 @@ export default function App() {
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false)
   const isAppPage = page !== 'login'
 
+  // handle_new_user() gives every new signup its own solo workspace before they ever accept an
+  // invitation into someone else's — so that solo workspace's membership row always has the
+  // earliest joined_at, and a plain "first in the list" default would land an invited teammate
+  // on their own empty workspace instead of the shared one they were actually invited to. A
+  // persisted prior choice always wins; only a user with no recorded choice yet falls back to
+  // preferring the earliest-joined workspace that already has other members over a solo one.
+  function pickDefaultWorkspaceId(list, userId) {
+    if (list.length === 0) return null
+    const persisted = readPersistedWorkspaceId(userId)
+    if (persisted && list.some((workspace) => workspace.id === persisted)) return persisted
+    return (list.find((workspace) => workspace.memberCount > 1) ?? list[0]).id
+  }
+
   async function loadWorkspaces(userId) {
     try {
       let list = await listMyWorkspaces(userId)
@@ -78,7 +116,7 @@ export default function App() {
         list = await listMyWorkspaces(userId)
       }
       setWorkspaces(list)
-      setActiveWorkspaceId((current) => current ?? list[0]?.id ?? null)
+      setActiveWorkspaceId((current) => current ?? pickDefaultWorkspaceId(list, userId))
       return list
     } catch {
       setWorkspaces([])
@@ -131,6 +169,13 @@ export default function App() {
       isMounted = false
     }
   }, [])
+
+  // Keeps the persisted choice in sync with every way activeWorkspaceId can change (initial
+  // pick, manual switch, or creating a new workspace) without needing to touch each call site.
+  useEffect(() => {
+    if (!currentUser?.id || !activeWorkspaceId) return
+    persistActiveWorkspaceId(currentUser.id, activeWorkspaceId)
+  }, [currentUser?.id, activeWorkspaceId])
 
   useEffect(() => {
     if (authSource !== 'supabase' || !activeWorkspaceId || !currentUser?.id) {

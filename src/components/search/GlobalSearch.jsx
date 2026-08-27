@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { timeAgo } from '../../lib/formatters'
 import { addRecentSearch, clearRecentSearches, getRecentSearches, searchWorkspace } from '../../services/searchService'
 import { formatFileSize } from '../../services/fileService'
+import { SearchIcon } from '../ui/NavIcons'
 
 const GROUPS = [
   { key: 'messages', label: 'Messages' },
@@ -165,6 +166,7 @@ export function GlobalSearch({ onClose, onNavigate, workspace }) {
     <div className="modal-backdrop search-modal-backdrop" onClick={onClose}>
       <div className="global-search-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="Search TeamHub" aria-modal="true">
         <div className="global-search-input-row">
+          <SearchIcon aria-hidden="true" className="global-search-icon" height="18" width="18" />
           <input
             aria-label="Search messages, files, people, teams, projects, tasks"
             onChange={(event) => setQuery(event.target.value)}

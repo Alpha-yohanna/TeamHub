@@ -186,6 +186,7 @@ export function ThreadPanel({ parentMessage, currentUser, members, workspaceId, 
           onReply={() => {}}
           onOpenThread={() => {}}
           onToggleReaction={handleToggleReaction}
+          showQuotePreview={false}
           showThreadIndicator={false}
         />
         <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0.5rem 0' }} />
@@ -217,6 +218,7 @@ export function ThreadPanel({ parentMessage, currentUser, members, workspaceId, 
                 onOpenThread={() => {}}
                 onReply={() => {}}
                 onToggleReaction={handleToggleReaction}
+                showQuotePreview={false}
                 showThreadIndicator={false}
               />
             )

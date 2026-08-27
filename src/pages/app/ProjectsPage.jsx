@@ -4,7 +4,7 @@ import { KanbanBoard } from '../../components/projects/KanbanBoard'
 import { TaskDetailModal } from '../../components/projects/TaskDetailModal'
 import { TaskListView } from '../../components/projects/TaskListView'
 import { Button } from '../../components/ui/Button'
-import { timeAgo } from '../../lib/formatters'
+import { formatShortDate, timeAgo } from '../../lib/formatters'
 import { describeActivity, listActivity, logActivity } from '../../services/activityService'
 import { deleteFile, formatFileSize, getFileDownloadUrl, listFiles, uploadFile } from '../../services/fileService'
 import { createChannel, listProjectChannels } from '../../services/messageService'
@@ -41,7 +41,7 @@ const TABS = [
 
 const STATUS_LABELS = {
   planning: 'Planning',
-  active: 'Active',
+  active: 'In Progress',
   on_hold: 'On Hold',
   completed: 'Completed',
   archived: 'Archived',
@@ -787,7 +787,7 @@ export function ProjectsPage({ currentUser, initialFocus, onFocusConsumed, works
         </div>
         {canCreateProject && (
           <Button onClick={() => setIsCreating((open) => !open)} type="button">
-            {isCreating ? 'Cancel' : 'New project'}
+            {isCreating ? 'Cancel' : '+ Create project'}
           </Button>
         )}
       </div>
@@ -833,7 +833,17 @@ export function ProjectsPage({ currentUser, initialFocus, onFocusConsumed, works
             <h2>All projects</h2>
           </div>
           {projects.length === 0 ? (
-            <p className="empty-state-inline">{canCreateProject ? 'No projects yet. Create the first one.' : 'No projects yet.'}</p>
+            <div className="empty-state-inline">
+              <p style={{ margin: 0 }}>No projects yet.</p>
+              <p style={{ margin: '0.3rem 0 0' }}>
+                Create your first project to organize work, assign tasks, and track progress with your team.
+              </p>
+              {canCreateProject && (
+                <Button onClick={() => setIsCreating(true)} style={{ marginTop: '0.75rem' }} type="button">
+                  + Create project
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="user-list">
               {projects.map((project) => (
@@ -849,8 +859,13 @@ export function ProjectsPage({ currentUser, initialFocus, onFocusConsumed, works
                       {STATUS_LABELS[project.status]}
                       {project.teamName ? ` · ${project.teamName}` : ''}
                     </span>
+                    <span className="team-card-meta">
+                      {project.taskCount} task{project.taskCount === 1 ? '' : 's'} · {project.memberCount} member
+                      {project.memberCount === 1 ? '' : 's'}
+                    </span>
+                    {project.dueDate && <span className="team-card-meta">Due {formatShortDate(project.dueDate)}</span>}
                   </div>
-                  <em>{project.memberCount} member{project.memberCount === 1 ? '' : 's'}</em>
+                  <em>{project.progressPercent}%</em>
                 </button>
               ))}
             </div>

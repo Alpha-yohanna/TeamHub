@@ -19,13 +19,13 @@ const sidebarGroups = [
       { icon: TeamsIcon, label: 'Teams', page: 'teams' },
       { icon: ProjectsIcon, label: 'Projects', page: 'projects' },
       { icon: FilesIcon, label: 'Files', page: 'files' },
+      { icon: ActivityIcon, label: 'Activity', page: 'activity' },
     ],
   },
   {
     title: 'Personal',
     items: [
       { icon: NotificationsIcon, label: 'Notifications', page: 'notifications' },
-      { icon: ActivityIcon, label: 'Activity', page: 'activity' },
       { icon: SettingsIcon, label: 'Settings', page: 'settings' },
     ],
   },
