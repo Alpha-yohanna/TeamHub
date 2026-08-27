@@ -101,6 +101,41 @@ export async function listActivity(workspaceId, limit = 20, { teamId, projectId,
   return data ?? []
 }
 
+// Buckets real activity_logs rows from the last 7 days by weekday for the dashboard's activity
+// chart — no synthetic/sample data, just a client-side aggregation of the same table Recent
+// Activity already reads from.
+export async function getWeeklyActivityCounts(workspaceId) {
+  const since = new Date()
+  since.setDate(since.getDate() - 6)
+  since.setHours(0, 0, 0, 0)
+
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('created_at')
+    .eq('workspace_id', workspaceId)
+    .gte('created_at', since.toISOString())
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const days = []
+  for (let i = 6; i >= 0; i -= 1) {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    days.push({ key: date.toDateString(), label: date.toLocaleDateString(undefined, { weekday: 'short' }), value: 0 })
+  }
+
+  const byKey = new Map(days.map((day) => [day.key, day]))
+  for (const row of data ?? []) {
+    const key = new Date(row.created_at).toDateString()
+    const day = byKey.get(key)
+    if (day) day.value += 1
+  }
+
+  return days.map(({ label, value }) => ({ label, value }))
+}
+
 export async function logActivity({
   workspaceId,
   actorId,

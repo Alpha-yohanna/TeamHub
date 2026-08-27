@@ -12,6 +12,7 @@ export function AppShell({
   children,
   currentUser,
   onCreateWorkspace,
+  onLogout,
   onNavigate,
   onNavigateToTarget,
   onSwitchWorkspace,
@@ -39,20 +40,13 @@ export function AppShell({
     onNavigate(page)
   }
 
+  function handleSignOut() {
+    setIsMobileNavOpen(false)
+    onLogout?.()
+  }
+
   return (
     <main className="app-shell">
-      <button
-        aria-expanded={isMobileNavOpen}
-        aria-label="Toggle navigation menu"
-        className="mobile-nav-toggle"
-        onClick={() => setIsMobileNavOpen((open) => !open)}
-        type="button"
-      >
-        <span />
-        <span />
-        <span />
-      </button>
-
       {isMobileNavOpen && (
         <button
           aria-label="Close navigation menu"
@@ -70,6 +64,7 @@ export function AppShell({
           mode="app"
           onCreateWorkspace={onCreateWorkspace}
           onNavigate={handleNavigate}
+          onSignOut={handleSignOut}
           onSwitchWorkspace={onSwitchWorkspace}
           onlineUserIds={onlineUserIds}
           unreadCount={unreadCount}
@@ -79,10 +74,23 @@ export function AppShell({
 
       <div className="app-main">
         <header className="app-topbar">
-          <div>
-            <span className="preview-label">{activeWorkspace?.name || 'Your workspace'}</span>
-            <strong>{activeWorkspace?.role ? `${capitalize(activeWorkspace.role)} access` : role === 'admin' ? 'Admin access' : 'Member access'}</strong>
-            <small className="topbar-meta">{currentUser?.email}</small>
+          <div className="app-topbar-heading">
+            <button
+              aria-expanded={isMobileNavOpen}
+              aria-label="Toggle navigation menu"
+              className="mobile-nav-toggle"
+              onClick={() => setIsMobileNavOpen((open) => !open)}
+              type="button"
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+            <div>
+              <span className="preview-label">{activeWorkspace?.name || 'Your workspace'}</span>
+              <strong>{activeWorkspace?.role ? `${capitalize(activeWorkspace.role)} access` : role === 'admin' ? 'Admin access' : 'Member access'}</strong>
+              <small className="topbar-meta">{currentUser?.email}</small>
+            </div>
           </div>
           <div className="topbar-actions">
             <button className="search-button" onClick={() => setIsSearchOpen(true)} type="button">

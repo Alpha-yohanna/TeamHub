@@ -1,12 +1,15 @@
 import { TeamHubMark } from '../ui/Logo'
+import { WorkspaceSwitcher } from '../workspace/WorkspaceSwitcher'
 import {
   ActivityIcon,
   DashboardIcon,
   FilesIcon,
   MessagesIcon,
   NotificationsIcon,
+  ProfileIcon,
   ProjectsIcon,
   SettingsIcon,
+  SignOutIcon,
   TeamsIcon,
 } from '../ui/NavIcons'
 
@@ -29,6 +32,10 @@ const sidebarGroups = [
       { icon: SettingsIcon, label: 'Settings', page: 'settings' },
     ],
   },
+  {
+    title: 'Account',
+    items: [{ icon: ProfileIcon, label: 'Profile', page: 'settings' }, { icon: SignOutIcon, label: 'Sign out', action: 'sign-out' }],
+  },
 ]
 
 export function HomeSidebar({
@@ -38,6 +45,7 @@ export function HomeSidebar({
   mode = 'home',
   onCreateWorkspace,
   onNavigate,
+  onSignOut,
   onSwitchWorkspace,
   onlineUserIds = new Set(),
   unreadCount = 0,
@@ -47,8 +55,6 @@ export function HomeSidebar({
     event.preventDefault()
     onNavigate?.(page)
   }
-
-  const hasWorkspaces = mode === 'app' && workspaces.length > 0
 
   return (
     <aside className="home-sidebar" aria-label="TeamHub home navigation">
@@ -66,29 +72,7 @@ export function HomeSidebar({
 
       {mode === 'app' ? (
         <div className="workspace-switcher-actions">
-          <div className="workspace-pill workspace-switcher">
-            <span className="workspace-avatar">{(activeWorkspace?.name || 'W').charAt(0).toUpperCase()}</span>
-            <div>
-              {hasWorkspaces ? (
-                <select
-                  aria-label="Switch workspace"
-                  onChange={(event) => onSwitchWorkspace?.(event.target.value)}
-                  value={activeWorkspace?.id || ''}
-                >
-                  {workspaces.map((workspace) => (
-                    <option key={workspace.id} value={workspace.id}>
-                      {workspace.name}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <strong>Loading workspace…</strong>
-              )}
-              {hasWorkspaces && (
-                <span>{activeWorkspace?.memberCount ?? 1} member{activeWorkspace?.memberCount === 1 ? '' : 's'}</span>
-              )}
-            </div>
-          </div>
+          <WorkspaceSwitcher activeWorkspace={activeWorkspace} onSwitchWorkspace={onSwitchWorkspace} workspaces={workspaces} />
           <button
             aria-label="Create workspace"
             className="workspace-switcher-new"
@@ -113,22 +97,31 @@ export function HomeSidebar({
         {sidebarGroups.map((group) => (
           <div className="sidebar-group" key={group.title}>
             <p>{group.title}</p>
-            {group.items.map((item) => (
-              <a
-                className={activePage === item.page ? 'active' : ''}
-                href={`#${item.page}`}
-                key={item.page}
-                onClick={(event) => handleNavigation(event, item.page)}
-              >
-                <span aria-hidden="true">
-                  <item.icon />
-                </span>
-                {item.label}
-                {item.page === 'notifications' && unreadCount > 0 && (
-                  <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
-                )}
-              </a>
-            ))}
+            {group.items.map((item) =>
+              item.action === 'sign-out' ? (
+                <button key={item.label} onClick={() => onSignOut?.()} type="button">
+                  <span aria-hidden="true">
+                    <item.icon />
+                  </span>
+                  {item.label}
+                </button>
+              ) : (
+                <a
+                  className={activePage === item.page ? 'active' : ''}
+                  href={`#${item.page}`}
+                  key={item.label}
+                  onClick={(event) => handleNavigation(event, item.page)}
+                >
+                  <span aria-hidden="true">
+                    <item.icon />
+                  </span>
+                  {item.label}
+                  {item.page === 'notifications' && unreadCount > 0 && (
+                    <span className="nav-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                  )}
+                </a>
+              )
+            )}
           </div>
         ))}
       </nav>

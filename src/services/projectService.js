@@ -157,6 +157,23 @@ export async function getProjectTaskCounts(projectId) {
   return { totalTasks: total.count ?? 0, completedTasks: completed.count ?? 0 }
 }
 
+export async function listMyProjects(workspaceId, userId, limit = 5) {
+  const { data, error } = await supabase
+    .from('project_members')
+    .select('projects!inner (id, name, status, due_date, workspace_id)')
+    .eq('user_id', userId)
+    .eq('projects.workspace_id', workspaceId)
+    .not('projects.status', 'in', '(completed,archived)')
+    .order('joined_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (data ?? []).map((row) => row.projects).filter(Boolean)
+}
+
 export async function getWorkspaceProjectStats(workspaceId) {
   const [totalProjects, activeProjects, openTasks, completedTasks] = await Promise.all([
     supabase.from('projects').select('id', { count: 'exact', head: true }).eq('workspace_id', workspaceId),

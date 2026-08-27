@@ -297,6 +297,7 @@ export default function App() {
       activeWorkspace={activeWorkspace}
       currentUser={currentUser}
       onCreateWorkspace={() => setIsCreatingWorkspace(true)}
+      onLogout={handleLogout}
       onNavigate={setPage}
       onNavigateToTarget={handleNotificationNavigate}
       onSwitchWorkspace={handleSwitchWorkspace}
@@ -312,6 +313,7 @@ export default function App() {
           initialFocus={activeFocus}
           onFocusConsumed={() => setInitialFocus(null)}
           onLogout={handleLogout}
+          onNavigate={setPage}
           onNavigateToNotificationTarget={handleNotificationNavigate}
           onNotificationsChanged={() => refreshUnreadCount(currentUser.id, activeWorkspaceId)}
           onProfileUpdated={handleProfileUpdated}

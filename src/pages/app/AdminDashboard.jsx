@@ -1,52 +1,56 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/Button'
-import { timeAgo } from '../../lib/formatters'
-import { describeActivity, listActivity, logActivity } from '../../services/activityService'
-import { formatFileSize, listRecentFiles } from '../../services/fileService'
-import { listRecentWorkspaceMessages } from '../../services/messageService'
-import { getWorkspaceProjectStats } from '../../services/projectService'
-import { listMyAssignedTasks, listUpcomingDeadlines } from '../../services/taskService'
+import { MetricsGrid } from '../../components/dashboard/MetricsGrid'
+import { WorkspaceActivityChart } from '../../components/dashboard/WorkspaceActivityChart'
+import { RecentActivityList } from '../../components/dashboard/RecentActivityList'
+import { MyWorkPanel } from '../../components/dashboard/MyWorkPanel'
 import {
-  acceptInvitation,
-  declineInvitation,
-  getWorkspaceStats,
-  inviteToWorkspace,
-  listMyPendingInvitations,
-  listWorkspaceInvitations,
-  listWorkspaceMembers,
-  removeWorkspaceMember,
-  revokeInvitation,
-  updateMemberRole,
-} from '../../services/workspaceService'
+  CheckCircleIcon,
+  ChecklistIcon,
+  FilesIcon,
+  MessagesIcon,
+  ProjectsIcon,
+  TeamsIcon,
+  UsersIcon,
+} from '../../components/ui/NavIcons'
+import { timeAgo } from '../../lib/formatters'
+import { getWeeklyActivityCounts, listActivity } from '../../services/activityService'
+import { listRecentFiles } from '../../services/fileService'
+import { listConversations, listRecentWorkspaceMessages } from '../../services/messageService'
+import { getWorkspaceProjectStats, listMyProjects } from '../../services/projectService'
+import { listMyAssignedTasks, listUpcomingDeadlines } from '../../services/taskService'
+import { acceptInvitation, declineInvitation, getWorkspaceStats, listMyPendingInvitations } from '../../services/workspaceService'
 
-const MEMBER_ROLE_OPTIONS = ['admin', 'manager', 'member']
+function greetingForHour(hour) {
+  if (hour < 12) return 'morning'
+  if (hour < 18) return 'afternoon'
+  return 'evening'
+}
 
 export function AdminDashboard({
   authSource,
   currentUser,
+  onNavigate,
   onWorkspacesChanged,
-  onlineUserIds = new Set(),
   role,
   workspace,
 }) {
   const isLive = authSource === 'supabase'
   const effectiveRole = isLive ? workspace?.role : role
   const isAdmin = effectiveRole === 'admin' || effectiveRole === 'owner'
-  const [members, setMembers] = useState([])
   const [stats, setStats] = useState(null)
   const [projectStats, setProjectStats] = useState(null)
+  const [weeklyActivity, setWeeklyActivity] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
   const [recentMessages, setRecentMessages] = useState([])
   const [recentFiles, setRecentFiles] = useState([])
   const [myTasks, setMyTasks] = useState([])
+  const [myProjects, setMyProjects] = useState([])
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0)
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([])
-  const [sentInvitations, setSentInvitations] = useState([])
   const [myInvitations, setMyInvitations] = useState([])
   const [isLoading, setIsLoading] = useState(isLive)
   const [error, setError] = useState('')
-  const [isInviting, setIsInviting] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteMessage, setInviteMessage] = useState('')
 
   useEffect(() => {
     if (!isLive || !workspace?.id) {
@@ -58,36 +62,42 @@ export function AdminDashboard({
     setIsLoading(true)
 
     Promise.all([
-      listWorkspaceMembers(workspace.id),
       getWorkspaceStats(workspace.id),
       getWorkspaceProjectStats(workspace.id),
-      listActivity(workspace.id, 5),
+      getWeeklyActivityCounts(workspace.id),
+      listActivity(workspace.id, 6),
       listRecentWorkspaceMessages(workspace.id, 5),
       listRecentFiles(workspace.id, 5),
       listMyAssignedTasks(workspace.id, currentUser.id, 5),
+      listMyProjects(workspace.id, currentUser.id, 5),
+      listConversations(workspace.id, currentUser.id),
       listUpcomingDeadlines(workspace.id, 5),
       listMyPendingInvitations(currentUser.email),
     ])
       .then(
         ([
-          membersResult,
           statsResult,
           projectStatsResult,
+          weeklyActivityResult,
           activityResult,
           messagesResult,
           filesResult,
           myTasksResult,
+          myProjectsResult,
+          conversationsResult,
           upcomingResult,
           myInvitesResult,
         ]) => {
           if (!isMounted) return
-          setMembers(membersResult)
           setStats(statsResult)
           setProjectStats(projectStatsResult)
+          setWeeklyActivity(weeklyActivityResult)
           setRecentActivity(activityResult)
           setRecentMessages(messagesResult)
           setRecentFiles(filesResult)
           setMyTasks(myTasksResult)
+          setMyProjects(myProjectsResult)
+          setUnreadMessageCount(conversationsResult.reduce((sum, conversation) => sum + conversation.unreadCount, 0))
           setUpcomingDeadlines(upcomingResult)
           setMyInvitations(myInvitesResult)
         }
@@ -103,69 +113,6 @@ export function AdminDashboard({
       isMounted = false
     }
   }, [isLive, workspace?.id, currentUser.email, currentUser.id])
-
-  useEffect(() => {
-    if (!isLive || !isAdmin || !workspace?.id) {
-      setSentInvitations([])
-      return
-    }
-
-    let isMounted = true
-    listWorkspaceInvitations(workspace.id)
-      .then((result) => {
-        if (isMounted) setSentInvitations(result)
-      })
-      .catch((err) => {
-        if (isMounted) setError(err.message)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [isLive, isAdmin, workspace?.id])
-
-  async function handleInvite(event) {
-    event.preventDefault()
-    if (!inviteEmail.trim() || !workspace?.id) return
-    setError('')
-    setInviteMessage('')
-
-    try {
-      const invite = await inviteToWorkspace({
-        workspaceId: workspace.id,
-        email: inviteEmail.trim(),
-        invitedBy: currentUser.id,
-      })
-      setInviteMessage(
-        invite.emailSent
-          ? `Invite email sent to ${inviteEmail.trim()}.`
-          : `Invitation saved for ${inviteEmail.trim()}, but the email couldn't be sent. They'll still join automatically once they accept.`
-      )
-      setSentInvitations((prev) => [invite, ...prev])
-      setStats((prev) => (prev ? { ...prev, pendingInviteCount: prev.pendingInviteCount + 1 } : prev))
-      setInviteEmail('')
-      await logActivity({
-        workspaceId: workspace.id,
-        actorId: currentUser.id,
-        action: 'member.invited',
-        targetType: 'member',
-        metadata: { name: inviteEmail.trim() },
-      })
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  async function handleRevokeInvite(invitationId) {
-    setError('')
-    try {
-      await revokeInvitation(invitationId)
-      setSentInvitations((prev) => prev.filter((invite) => invite.id !== invitationId))
-      setStats((prev) => (prev ? { ...prev, pendingInviteCount: Math.max(0, prev.pendingInviteCount - 1) } : prev))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
 
   async function handleAcceptMyInvite(invitationId) {
     setError('')
@@ -188,75 +135,52 @@ export function AdminDashboard({
     }
   }
 
-  async function handleRoleChange(member, nextRole) {
-    setError('')
-    try {
-      await updateMemberRole({ membershipId: member.membershipId, role: nextRole })
-      setMembers((prev) =>
-        prev.map((item) => (item.membershipId === member.membershipId ? { ...item, workspaceRole: nextRole } : item))
-      )
-    } catch (err) {
-      setError(err.message)
-    }
-  }
+  const showLoading = isLive && isLoading
 
-  async function handleRemoveMember(member) {
-    if (!window.confirm(`Remove ${member.full_name} from ${workspace?.name}?`)) return
-    setError('')
-
-    try {
-      await removeWorkspaceMember(member.membershipId)
-      setMembers((prev) => prev.filter((item) => item.membershipId !== member.membershipId))
-      setStats((prev) => (prev ? { ...prev, memberCount: Math.max(0, prev.memberCount - 1) } : prev))
-      await logActivity({
-        workspaceId: workspace.id,
-        actorId: currentUser.id,
-        action: 'member.removed',
-        targetType: 'member',
-        targetId: member.id,
-        metadata: { name: member.full_name },
-      })
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const displayStats =
+  const adminMetrics =
     stats && projectStats
       ? [
-          { label: 'Members', value: stats.memberCount },
-          { label: 'Teams', value: stats.teamCount },
-          { label: 'Projects', value: projectStats.projectCount },
-          { label: 'Active projects', value: projectStats.activeProjectCount },
-          { label: 'Open tasks', value: projectStats.openTaskCount },
-          { label: 'Completed tasks', value: projectStats.completedTaskCount },
-          { label: 'Files shared', value: stats.fileCount },
-          { label: 'Messages', value: stats.messageCount },
-          { label: 'Pending invites', value: stats.pendingInviteCount },
+          { key: 'members', label: 'Members', value: stats.memberCount, Icon: UsersIcon, tone: 'primary', onClick: () => onNavigate?.('settings') },
+          { key: 'teams', label: 'Teams', value: stats.teamCount, Icon: TeamsIcon, tone: 'primary', onClick: () => onNavigate?.('teams') },
+          { key: 'projects', label: 'Projects', value: projectStats.projectCount, Icon: ProjectsIcon, tone: 'primary', onClick: () => onNavigate?.('projects') },
+          { key: 'active-projects', label: 'Active projects', value: projectStats.activeProjectCount, Icon: CheckCircleIcon, tone: 'success', onClick: () => onNavigate?.('projects') },
+          { key: 'open-tasks', label: 'Open tasks', value: projectStats.openTaskCount, Icon: ChecklistIcon, tone: 'primary', onClick: () => onNavigate?.('projects') },
+          { key: 'completed-tasks', label: 'Completed tasks', value: projectStats.completedTaskCount, Icon: CheckCircleIcon, tone: 'success', onClick: () => onNavigate?.('projects') },
+          { key: 'files', label: 'Files shared', value: stats.fileCount, Icon: FilesIcon, tone: 'primary', onClick: () => onNavigate?.('files') },
+          { key: 'messages', label: 'Messages', value: stats.messageCount, Icon: MessagesIcon, tone: 'primary', onClick: () => onNavigate?.('messages') },
         ]
       : []
+
+  const memberMetrics = [
+    { key: 'my-tasks', label: 'My open tasks', value: myTasks.length, Icon: ChecklistIcon, tone: 'primary', onClick: () => onNavigate?.('projects') },
+    { key: 'my-projects', label: 'My active projects', value: myProjects.length, Icon: ProjectsIcon, tone: 'primary', onClick: () => onNavigate?.('projects') },
+    { key: 'unread', label: 'Unread messages', value: unreadMessageCount, Icon: MessagesIcon, tone: 'primary', onClick: () => onNavigate?.('messages') },
+    { key: 'recent-files', label: 'Recent files', value: recentFiles.length, Icon: FilesIcon, tone: 'primary', onClick: () => onNavigate?.('files') },
+  ]
+
+  const metrics = isAdmin ? adminMetrics : memberMetrics
+  const firstName = (currentUser?.name || '').split(' ')[0] || 'there'
+  const timeOfDay = greetingForHour(new Date().getHours())
 
   return (
     <section className="dashboard-page admin-dashboard-page" aria-labelledby="dashboard-title">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">{isAdmin ? 'Admin dashboard' : 'Member dashboard'}</p>
+          <p className="eyebrow">{isAdmin ? 'Admin dashboard' : 'Your workspace'}</p>
           <h1 id="dashboard-title">
-            {isAdmin ? 'Workspace control center' : 'Your TeamHub workspace'}
+            {isAdmin ? 'Workspace control center' : `Good ${timeOfDay}, ${firstName}`}
           </h1>
           <p>
             {isAdmin
-              ? 'Review users, workspace activity, shared files, and team growth from one screen.'
-              : 'See your team updates, messages, files, and upcoming work.'}
+              ? 'Review users, workspace activity, shared files, projects, tasks and team growth from one screen.'
+              : "Here's what's happening in your workspace."}
           </p>
         </div>
-        <span className="role-pill">
-          {isLive && effectiveRole
-            ? `${effectiveRole.charAt(0).toUpperCase()}${effectiveRole.slice(1)} view`
-            : isAdmin
-              ? 'Admin view'
-              : 'Member view'}
-        </span>
+        {isAdmin && (
+          <span className="role-pill">
+            {isLive && effectiveRole ? `${effectiveRole.charAt(0).toUpperCase()}${effectiveRole.slice(1)} view` : 'Admin view'}
+          </span>
+        )}
       </div>
 
       {error && (
@@ -285,11 +209,7 @@ export function AdminDashboard({
                   <Button onClick={() => handleAcceptMyInvite(invite.id)} type="button">
                     Accept
                   </Button>
-                  <button
-                    className="text-button danger"
-                    onClick={() => handleDeclineMyInvite(invite.id)}
-                    type="button"
-                  >
+                  <button className="text-button danger" onClick={() => handleDeclineMyInvite(invite.id)} type="button">
                     Decline
                   </button>
                 </div>
@@ -299,116 +219,23 @@ export function AdminDashboard({
         </article>
       )}
 
-      <div className="stats-grid">
-        {isLive && isLoading
-          ? Array.from({ length: 5 }).map((_, index) => (
-              <article className="stat-card skeleton-card" key={index} aria-hidden="true" />
-            ))
-          : displayStats.map((stat) => (
-              <article className="stat-card" key={stat.label}>
-                <span>{stat.label}</span>
-                <strong>{stat.value}</strong>
-                {stat.change && <small>{stat.change}</small>}
-              </article>
-            ))}
-      </div>
+      <MetricsGrid isLoading={showLoading} metrics={metrics} />
+
+      {isLive && <WorkspaceActivityChart data={weeklyActivity} onViewAll={() => onNavigate?.('activity')} />}
 
       <div className="dashboard-grid">
-        <article className="panel-card">
-          <div className="panel-header">
-            <h2>Recent activity</h2>
-          </div>
-          <div className="activity-list">
-            {recentActivity.length === 0 ? (
-              <p className="empty-state-inline">No activity yet.</p>
-            ) : (
-              recentActivity.map((entry) => (
-                <div className="activity-item" key={entry.id}>
-                  <span className="feature-dot" aria-hidden="true" />
-                  <p>{describeActivity(entry)}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </article>
-
-        <article className="panel-card">
-          <div className="panel-header">
-            <h2>{isAdmin ? 'User management' : 'Team members'}</h2>
-            {isAdmin && isLive && workspace && (
-              <button className="small-action" onClick={() => setIsInviting((open) => !open)} type="button">
-                {isInviting ? 'Cancel' : 'Invite user'}
-              </button>
-            )}
-          </div>
-
-          {isInviting && (
-            <form className="inline-form" onSubmit={handleInvite}>
-              <input
-                aria-label="Email to invite"
-                onChange={(event) => setInviteEmail(event.target.value)}
-                placeholder="teammate@company.com"
-                required
-                type="email"
-                value={inviteEmail}
-              />
-              <Button type="submit">Send invite</Button>
-            </form>
-          )}
-
-          {inviteMessage && <p className="auth-note">{inviteMessage}</p>}
-
-          <div className="user-list">
-            {isLoading ? (
-              <p className="empty-state-inline">Loading members…</p>
-            ) : members.length === 0 ? (
-              <p className="empty-state-inline">No members yet.</p>
-            ) : (
-              members.map((member) => (
-                <div className="user-row" key={member.id}>
-                  <span className="avatar-wrap">
-                    <span className="avatar">
-                      {(member.full_name || member.username || '?').slice(0, 2).toUpperCase()}
-                    </span>
-                    <span className={`status-dot${onlineUserIds.has(member.id) ? ' online' : ''}`} aria-hidden="true" />
-                  </span>
-                  <div>
-                    <strong>{member.full_name}</strong>
-                    <span>{member.username}</span>
-                  </div>
-                  {isAdmin && member.workspaceRole !== 'owner' && member.id !== currentUser.id ? (
-                    <div className="row-actions">
-                      <select
-                        aria-label={`Change role for ${member.full_name}`}
-                        className="role-select"
-                        onChange={(event) => handleRoleChange(member, event.target.value)}
-                        value={member.workspaceRole}
-                      >
-                        {MEMBER_ROLE_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        className="text-button danger"
-                        onClick={() => handleRemoveMember(member)}
-                        type="button"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <em>{member.workspaceRole}</em>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </article>
+        <RecentActivityList isLoading={showLoading} items={recentActivity} />
+        <MyWorkPanel
+          isLoading={showLoading}
+          myProjects={myProjects}
+          myTasks={myTasks}
+          onNavigate={onNavigate}
+          recentFiles={recentFiles}
+          unreadMessageCount={unreadMessageCount}
+        />
       </div>
 
-      {isLive && (
+      {isLive && isAdmin && (
         <div className="dashboard-grid">
           <article className="panel-card">
             <div className="panel-header">
@@ -427,59 +254,6 @@ export function AdminDashboard({
                       <strong>{message.profiles?.full_name ?? 'Someone'}</strong> in #{message.channels?.name ?? 'channel'}:{' '}
                       {message.content}
                     </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </article>
-
-          <article className="panel-card">
-            <div className="panel-header">
-              <h2>Recent files</h2>
-            </div>
-            {isLoading ? (
-              <p className="empty-state-inline">Loading…</p>
-            ) : recentFiles.length === 0 ? (
-              <p className="empty-state-inline">No files uploaded yet.</p>
-            ) : (
-              <div className="user-list">
-                {recentFiles.map((file) => (
-                  <div className="user-row" key={file.id}>
-                    <span className="avatar">{file.name.slice(0, 2).toUpperCase()}</span>
-                    <div>
-                      <strong>{file.name}</strong>
-                      <span>
-                        {formatFileSize(file.size_bytes)} · {file.profiles?.full_name || 'Unknown'}
-                      </span>
-                    </div>
-                    <em>{timeAgo(file.created_at)}</em>
-                  </div>
-                ))}
-              </div>
-            )}
-          </article>
-        </div>
-      )}
-
-      {isLive && (
-        <div className="dashboard-grid">
-          <article className="panel-card">
-            <div className="panel-header">
-              <h2>My assigned tasks</h2>
-            </div>
-            {isLoading ? (
-              <p className="empty-state-inline">Loading…</p>
-            ) : myTasks.length === 0 ? (
-              <p className="empty-state-inline">Nothing assigned to you right now.</p>
-            ) : (
-              <div className="user-list">
-                {myTasks.map((task) => (
-                  <div className="user-row" key={task.id}>
-                    <div>
-                      <strong>{task.title}</strong>
-                      <span>{task.projectName ?? 'Project'}</span>
-                    </div>
-                    <em>{task.due_date ?? 'No due date'}</em>
                   </div>
                 ))}
               </div>
@@ -511,31 +285,6 @@ export function AdminDashboard({
             )}
           </article>
         </div>
-      )}
-
-      {isLive && isAdmin && (
-        <article className="panel-card">
-          <div className="panel-header">
-            <h2>Pending invitations</h2>
-          </div>
-          {sentInvitations.length === 0 ? (
-            <p className="empty-state-inline">No pending invitations.</p>
-          ) : (
-            <div className="user-list">
-              {sentInvitations.map((invite) => (
-                <div className="user-row" key={invite.id}>
-                  <div>
-                    <strong>{invite.email}</strong>
-                    <span>Invited {timeAgo(invite.created_at)} · {invite.role}</span>
-                  </div>
-                  <button className="text-button danger" onClick={() => handleRevokeInvite(invite.id)} type="button">
-                    Revoke
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </article>
       )}
     </section>
   )

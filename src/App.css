@@ -68,19 +68,113 @@
   min-width: 0;
 }
 
-.workspace-switcher > div {
+.workspace-switcher-trigger {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  font: inherit;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.workspace-switcher-trigger:disabled {
+  cursor: default;
+}
+
+.workspace-switcher-trigger > div {
   min-width: 0;
 }
 
-.workspace-switcher select {
-  background: transparent;
-  border: 0;
-  color: var(--strong);
-  font: inherit;
-  font-size: 0.92rem;
+.workspace-switcher-trigger strong {
   font-weight: 800;
-  max-width: 100%;
-  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-switcher-chevron {
+  color: var(--muted);
+  flex: 0 0 auto;
+  transition: transform 150ms ease;
+}
+
+.workspace-switcher-chevron.open {
+  transform: rotate(180deg);
+}
+
+.workspace-switcher-popover {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.15rem;
+  max-height: min(360px, 70vh);
+  overflow-y: auto;
+  padding: 0.4rem;
+  position: fixed;
+  z-index: 70;
+}
+
+.workspace-switcher-option {
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 0.65rem;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 0.7rem;
+  padding: 0.6rem;
+  text-align: left;
+  width: 100%;
+}
+
+.workspace-switcher-option:hover,
+.workspace-switcher-option:focus-visible {
+  background: var(--surface-muted);
+  outline: none;
+}
+
+.workspace-switcher-option.active {
+  background: var(--primary-soft);
+}
+
+.workspace-switcher-option-avatar {
+  height: 2rem;
+  width: 2rem;
+}
+
+.workspace-switcher-option-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.workspace-switcher-option-text strong {
+  color: var(--strong);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-switcher-option-text small {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.workspace-switcher-option-check {
+  color: var(--primary);
+  flex: 0 0 auto;
 }
 
 .sidebar-nav {
@@ -102,19 +196,27 @@
   text-transform: uppercase;
 }
 
-.sidebar-group a {
+.sidebar-group a,
+.sidebar-group button {
   align-items: center;
+  background: none;
+  border: 0;
   border-radius: 0.75rem;
   color: var(--muted);
+  cursor: pointer;
   display: flex;
+  font: inherit;
   font-size: 0.95rem;
   font-weight: 750;
   gap: 0.75rem;
   padding: 0.75rem;
+  text-align: left;
   text-decoration: none;
+  width: 100%;
 }
 
-.sidebar-group a span {
+.sidebar-group a span,
+.sidebar-group button span {
   background: var(--surface-muted);
   border: 1px solid var(--border);
   border-radius: 0.55rem;
@@ -129,40 +231,50 @@
 
 .sidebar-group a.active,
 .sidebar-group a:hover,
-.sidebar-group a:focus-visible {
+.sidebar-group a:focus-visible,
+.sidebar-group button:hover,
+.sidebar-group button:focus-visible {
   background: var(--primary-soft);
   color: var(--strong);
 }
 
 .sidebar-group a.active span,
 .sidebar-group a:hover span,
-.sidebar-group a:focus-visible span {
+.sidebar-group a:focus-visible span,
+.sidebar-group button:hover span,
+.sidebar-group button:focus-visible span {
   background: #3a4048;
   border-color: #3a4048;
   color: #f1f2f4;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .sidebar-group a span {
+  :root:not([data-theme="light"]) .sidebar-group a span,
+  :root:not([data-theme="light"]) .sidebar-group button span {
     color: #9aa4b2;
   }
 
   :root:not([data-theme="light"]) .sidebar-group a.active span,
   :root:not([data-theme="light"]) .sidebar-group a:hover span,
-  :root:not([data-theme="light"]) .sidebar-group a:focus-visible span {
+  :root:not([data-theme="light"]) .sidebar-group a:focus-visible span,
+  :root:not([data-theme="light"]) .sidebar-group button:hover span,
+  :root:not([data-theme="light"]) .sidebar-group button:focus-visible span {
     background: #4b5563;
     border-color: #4b5563;
     color: #f1f2f4;
   }
 }
 
-:root[data-theme="dark"] .sidebar-group a span {
+:root[data-theme="dark"] .sidebar-group a span,
+:root[data-theme="dark"] .sidebar-group button span {
   color: #9aa4b2;
 }
 
 :root[data-theme="dark"] .sidebar-group a.active span,
 :root[data-theme="dark"] .sidebar-group a:hover span,
-:root[data-theme="dark"] .sidebar-group a:focus-visible span {
+:root[data-theme="dark"] .sidebar-group a:focus-visible span,
+:root[data-theme="dark"] .sidebar-group button:hover span,
+:root[data-theme="dark"] .sidebar-group button:focus-visible span {
   background: #4b5563;
   border-color: #4b5563;
   color: #f1f2f4;
@@ -996,6 +1108,17 @@ input[type='radio']:focus-visible {
   padding: 1rem;
 }
 
+.app-topbar-heading {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.app-topbar-heading > div {
+  min-width: 0;
+}
+
 .app-topbar strong {
   color: var(--strong);
   display: block;
@@ -1176,20 +1299,6 @@ input[type='radio']:focus-visible {
   padding: 0.5rem 0.8rem;
 }
 
-.stats-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-}
-
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  padding: 1rem;
-}
-
 .skeleton-card {
   background: linear-gradient(90deg, var(--surface-muted) 25%, var(--border) 37%, var(--surface-muted) 63%);
   background-size: 400% 100%;
@@ -1204,25 +1313,6 @@ input[type='radio']:focus-visible {
   100% {
     background-position: 0 50%;
   }
-}
-
-.stat-card span,
-.stat-card small {
-  color: var(--muted);
-  display: block;
-}
-
-.stat-card strong {
-  color: var(--strong);
-  display: block;
-  font-size: 2rem;
-  line-height: 1;
-  margin: 0.8rem 0;
-}
-
-.stat-card small {
-  color: var(--success);
-  font-weight: 850;
 }
 
 .dashboard-grid {
@@ -1274,6 +1364,191 @@ input[type='radio']:focus-visible {
 .activity-item p {
   color: var(--strong);
   margin: 0;
+}
+
+.activity-item-time {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+}
+
+/* --- Dashboard metric cards --- */
+
+.metrics-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  cursor: default;
+  display: grid;
+  font: inherit;
+  gap: 0.65rem;
+  padding: 1.1rem;
+  text-align: left;
+}
+
+button.metric-card {
+  cursor: pointer;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+button.metric-card:hover,
+button.metric-card:focus-visible {
+  border-color: rgba(37, 99, 235, 0.3);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.metric-card-icon {
+  align-items: center;
+  border-radius: 0.75rem;
+  color: var(--primary);
+  display: inline-flex;
+  height: 2.4rem;
+  justify-content: center;
+  width: 2.4rem;
+}
+
+.metric-card-primary .metric-card-icon {
+  background: var(--primary-soft);
+}
+
+.metric-card-success .metric-card-icon {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.metric-card-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.metric-card-value {
+  color: var(--strong);
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.metric-card-trend {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.3rem;
+  width: fit-content;
+}
+
+.metric-card-trend-up {
+  color: var(--success);
+}
+
+.metric-card-trend-down {
+  color: #dc2626;
+}
+
+/* --- Workspace activity chart --- */
+
+.activity-chart-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.activity-chart {
+  height: 140px;
+  width: 100%;
+}
+
+.activity-chart-area {
+  fill: var(--primary-soft);
+  stroke: none;
+}
+
+.activity-chart-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.activity-chart-dot {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2;
+}
+
+.activity-chart-labels {
+  color: var(--muted);
+  display: flex;
+  font-size: 0.78rem;
+  font-weight: 650;
+  justify-content: space-between;
+  padding: 0 0.85rem;
+}
+
+/* --- My work panel --- */
+
+.my-work-card {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.my-work-section {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.my-work-section-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.my-work-section-heading h3 {
+  color: var(--strong);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.my-work-quick-stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.my-work-quick-stat {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  text-align: left;
+}
+
+.my-work-quick-stat:disabled {
+  cursor: default;
+}
+
+.my-work-quick-stat span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.my-work-quick-stat strong {
+  color: var(--strong);
+  font-size: 1.3rem;
 }
 
 .user-row strong,
@@ -2772,20 +3047,17 @@ input[type='radio']:focus-visible {
   }
 
   .mobile-nav-toggle {
-    background: var(--surface);
+    background: var(--surface-muted);
     border: 1px solid var(--border);
     border-radius: 0.7rem;
     cursor: pointer;
     display: grid;
+    flex: 0 0 auto;
     gap: 0.28rem;
-    height: 2.6rem;
-    left: 1rem;
+    height: 2.75rem;
     padding: 0.7rem;
     place-items: center;
-    position: fixed;
-    top: 1rem;
-    width: 2.6rem;
-    z-index: 50;
+    width: 2.75rem;
   }
 
   .mobile-nav-toggle span {
@@ -2796,6 +3068,14 @@ input[type='radio']:focus-visible {
     width: 1.1rem;
   }
 
+  /* Pinned so the menu trigger stays reachable while a long dashboard scrolls, instead of
+     scrolling away with the rest of the header. */
+  .app-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+
   .sidebar-wrap {
     bottom: 0;
     left: 0;
@@ -2803,7 +3083,7 @@ input[type='radio']:focus-visible {
     top: 0;
     transform: translateX(-100%);
     transition: transform 220ms ease;
-    width: min(280px, 82vw);
+    width: min(300px, 84vw);
     z-index: 60;
   }
 
@@ -2813,7 +3093,35 @@ input[type='radio']:focus-visible {
 
   .home-sidebar {
     box-shadow: var(--shadow);
+    gap: 0.75rem;
     height: 100%;
+    overflow-y: auto;
+    padding: 0.9rem;
+  }
+
+  .workspace-pill {
+    padding: 0.7rem;
+  }
+
+  .sidebar-nav {
+    gap: 0.6rem;
+  }
+
+  .sidebar-group {
+    gap: 0.2rem;
+  }
+
+  .sidebar-group p {
+    margin-bottom: 0.15rem;
+  }
+
+  .sidebar-group a,
+  .sidebar-group button {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .sidebar-user {
+    padding-top: 0.85rem;
   }
 
   .site-nav {
@@ -2843,7 +3151,7 @@ input[type='radio']:focus-visible {
   }
 
   .app-main {
-    padding: 1rem 1rem 1rem 4.5rem;
+    padding: 1rem;
   }
 
   .app-topbar,
@@ -2896,7 +3204,7 @@ input[type='radio']:focus-visible {
     width: 100%;
   }
 
-  .stats-grid,
+  .metrics-grid,
   .dashboard-grid,
   .teams-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -2921,8 +3229,8 @@ input[type='radio']:focus-visible {
 }
 
 /* Phone-width tightening for the admin/member dashboard — the 900px breakpoint above already
-   stacks the topbar and drops the stat grid to one column; below this width that single column
-   of full-padding stat cards reads as too much empty space, so give it a compact 2-up grid and
+   stacks the topbar and drops the metric grid to one column; below this width that single column
+   of full-padding metric cards reads as too much empty space, so give it a compact 2-up grid and
    trim the topbar's internal gaps instead. Desktop and tablet (>640px) are untouched. */
 @media (max-width: 640px) {
   .app-topbar {
@@ -2932,6 +3240,22 @@ input[type='radio']:focus-visible {
 
   .app-topbar .preview-label {
     margin-bottom: 0.35rem;
+  }
+
+  .topbar-actions {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .search-button {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+  }
+
+  .pwa-install {
+    flex: 1 1 100%;
   }
 
   .admin-dashboard-page {
@@ -2946,18 +3270,27 @@ input[type='radio']:focus-visible {
     margin-top: 0.5rem;
   }
 
-  .stats-grid {
+  .metrics-grid {
     gap: 0.65rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .stat-card {
+  .metric-card {
+    gap: 0.5rem;
     padding: 0.85rem;
   }
 
-  .stat-card strong {
-    font-size: 1.6rem;
-    margin: 0.35rem 0 0;
+  .metric-card-icon {
+    height: 2.1rem;
+    width: 2.1rem;
+  }
+
+  .metric-card-value {
+    font-size: 1.5rem;
+  }
+
+  .my-work-quick-stats {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

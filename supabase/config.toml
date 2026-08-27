@@ -1,0 +1,14 @@
+project_id = "xyhufdnhpvxeypzfanqr"
+
+# The Auth "Send Email" hook calls this function directly and authenticates the
+# request itself via the standardwebhooks signature (SEND_EMAIL_HOOK_SECRET) — it
+# never sends a Supabase user JWT. verify_jwt must stay false here, otherwise the
+# platform gateway rejects the hook's request before it ever reaches our code
+# (which also means it would NOT show up in the function's own invocation logs).
+[functions.send-email]
+verify_jwt = false
+
+# Called from the logged-in TeamHub app with the caller's own session JWT, which
+# the function itself validates via supabase.auth.getUser().
+[functions.send-invite-email]
+verify_jwt = true

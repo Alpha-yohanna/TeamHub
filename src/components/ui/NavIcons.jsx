@@ -90,6 +90,83 @@ export function LockIcon(props) {
   )
 }
 
+export function UsersIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <circle cx="8.5" cy="7.5" r="3" />
+      <path d="M3 19c.5-3 2.5-4.5 5.5-4.5S13.5 16 14 19" />
+      <path d="M15.5 4.7a2.8 2.8 0 0 1 0 5.4" />
+      <path d="M16.2 14.7c2 .4 3.3 1.8 3.7 4.3" />
+    </svg>
+  )
+}
+
+export function CheckCircleIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.3 12.3l2.4 2.4 5-5.2" />
+    </svg>
+  )
+}
+
+export function ChecklistIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <path d="M4.5 6.5l1.6 1.6L8.8 5" />
+      <path d="M11.5 6h8" />
+      <path d="M4.5 12.5l1.6 1.6 2.7-3.1" />
+      <path d="M11.5 12h8" />
+      <path d="M4.5 18.5l1.6 1.6 2.7-3.1" />
+      <path d="M11.5 18h8" />
+    </svg>
+  )
+}
+
+export function TrendUpIcon(props) {
+  return (
+    <svg height="12" width="12" {...commonProps} {...props}>
+      <path d="M4 16l6-6 4 4 6-8" />
+      <path d="M15 6h5v5" />
+    </svg>
+  )
+}
+
+export function ProfileIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <circle cx="12" cy="8.2" r="3.5" />
+      <path d="M4.8 19.5c.9-3.6 3.3-5.5 7.2-5.5s6.3 1.9 7.2 5.5" />
+    </svg>
+  )
+}
+
+export function SignOutIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <path d="M13 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H13" />
+      <path d="M10.5 12H21" />
+      <path d="M17.5 8.5L21 12l-3.5 3.5" />
+    </svg>
+  )
+}
+
+export function ChevronDownIcon(props) {
+  return (
+    <svg height="16" width="16" {...commonProps} {...props}>
+      <path d="M5.5 8.5l6.5 6.5 6.5-6.5" />
+    </svg>
+  )
+}
+
+export function CheckIcon(props) {
+  return (
+    <svg height="16" width="16" {...commonProps} {...props}>
+      <path d="M4.5 12.5l5 5 10-10" />
+    </svg>
+  )
+}
+
 export function SettingsIcon(props) {
   return (
     <svg height="18" width="18" {...commonProps} {...props}>
