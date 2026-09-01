@@ -2,6 +2,7 @@ import { TeamHubMark } from '../ui/Logo'
 import { WorkspaceSwitcher } from '../workspace/WorkspaceSwitcher'
 import {
   ActivityIcon,
+  AnnouncementIcon,
   DashboardIcon,
   FilesIcon,
   MessagesIcon,
@@ -13,30 +14,42 @@ import {
   TeamsIcon,
 } from '../ui/NavIcons'
 
-const sidebarGroups = [
-  {
-    title: 'Workspace',
-    items: [
-      { icon: DashboardIcon, label: 'Dashboard', page: 'dashboard' },
-      { icon: MessagesIcon, label: 'Messages', page: 'messages' },
-      { icon: TeamsIcon, label: 'Teams', page: 'teams' },
-      { icon: ProjectsIcon, label: 'Projects', page: 'projects' },
-      { icon: FilesIcon, label: 'Files', page: 'files' },
-      { icon: ActivityIcon, label: 'Activity', page: 'activity' },
-    ],
-  },
-  {
-    title: 'Personal',
-    items: [
-      { icon: NotificationsIcon, label: 'Notifications', page: 'notifications' },
-      { icon: SettingsIcon, label: 'Settings', page: 'settings' },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [{ icon: ProfileIcon, label: 'Profile', page: 'settings' }, { icon: SignOutIcon, label: 'Sign out', action: 'sign-out' }],
-  },
-]
+function buildSidebarGroups(isSuperAdmin) {
+  return [
+    {
+      title: 'Workspace',
+      items: [
+        { icon: DashboardIcon, label: 'Dashboard', page: 'dashboard' },
+        { icon: MessagesIcon, label: 'Messages', page: 'messages' },
+        { icon: TeamsIcon, label: 'Teams', page: 'teams' },
+        { icon: ProjectsIcon, label: 'Projects', page: 'projects' },
+        { icon: FilesIcon, label: 'Files', page: 'files' },
+        { icon: ActivityIcon, label: 'Activity', page: 'activity' },
+      ],
+    },
+    {
+      title: 'Personal',
+      items: [
+        { icon: NotificationsIcon, label: 'Notifications', page: 'notifications' },
+        { icon: SettingsIcon, label: 'Settings', page: 'settings' },
+      ],
+    },
+    // Only rendered for platform-wide super admins — a separate concept from the
+    // per-workspace owner/admin roles the rest of the app checks.
+    ...(isSuperAdmin
+      ? [
+          {
+            title: 'Platform admin',
+            items: [{ icon: AnnouncementIcon, label: 'Announcements', page: 'announcements' }],
+          },
+        ]
+      : []),
+    {
+      title: 'Account',
+      items: [{ icon: ProfileIcon, label: 'Profile', page: 'settings' }, { icon: SignOutIcon, label: 'Sign out', action: 'sign-out' }],
+    },
+  ]
+}
 
 export function HomeSidebar({
   activePage = 'dashboard',
@@ -94,7 +107,7 @@ export function HomeSidebar({
       )}
 
       <nav className="sidebar-nav" aria-label="Workspace preview navigation">
-        {sidebarGroups.map((group) => (
+        {buildSidebarGroups(mode === 'app' && currentUser?.isSuperAdmin).map((group) => (
           <div className="sidebar-group" key={group.title}>
             <p>{group.title}</p>
             {group.items.map((item) =>

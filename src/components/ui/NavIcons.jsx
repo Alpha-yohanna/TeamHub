@@ -175,3 +175,12 @@ export function SettingsIcon(props) {
     </svg>
   )
 }
+
+export function AnnouncementIcon(props) {
+  return (
+    <svg height="18" width="18" {...commonProps} {...props}>
+      <path d="M3 10.5v3a1.5 1.5 0 0 0 1.5 1.5H6l1 4h2l-1-4h2.5l6 3.5v-12L10.5 10H4.5A1.5 1.5 0 0 0 3 10.5Z" />
+      <path d="M19.5 9a3 3 0 0 1 0 6" />
+    </svg>
+  )
+}

@@ -20,6 +20,16 @@ async function buildSupabaseSession(authUser) {
     );
   }
 
+  // Platform-wide (not per-workspace) admin flag, backed by the super_admins table —
+  // failing closed to `false` on any error so a lookup hiccup never grants admin UI.
+  let isSuperAdmin = false;
+  try {
+    const { data, error } = await supabase.rpc("is_super_admin");
+    isSuperAdmin = !error && data === true;
+  } catch {
+    isSuperAdmin = false;
+  }
+
   return {
     user: {
       id: authUser.id,
@@ -30,6 +40,7 @@ async function buildSupabaseSession(authUser) {
       status: profile.status,
       avatarUrl: profile.avatar_url,
       bio: profile.bio,
+      isSuperAdmin,
     },
     source: "supabase",
   };

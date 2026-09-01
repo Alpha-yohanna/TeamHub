@@ -4,6 +4,7 @@ import { CreateWorkspaceModal } from './components/workspace/CreateWorkspaceModa
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { ActivityPage } from './pages/app/ActivityPage'
 import { AdminDashboard } from './pages/app/AdminDashboard'
+import { AnnouncementsPage } from './pages/app/AnnouncementsPage'
 import { FilesPage } from './pages/app/FilesPage'
 import { MessagesPage } from './pages/app/MessagesPage'
 import { NotificationsPage } from './pages/app/NotificationsPage'
@@ -72,6 +73,7 @@ async function consumeSignupIntent(workspaceList) {
 
 const appPages = {
   activity: ActivityPage,
+  announcements: AnnouncementsPage,
   dashboard: AdminDashboard,
   files: FilesPage,
   messages: MessagesPage,

@@ -12,3 +12,9 @@ verify_jwt = false
 # the function itself validates via supabase.auth.getUser().
 [functions.send-invite-email]
 verify_jwt = true
+
+# Called from the Admin Announcements page with the caller's own session JWT; the
+# function independently re-verifies super-admin status via the super_admins table
+# before doing anything, so verify_jwt here only confirms the caller is signed in.
+[functions.send-announcement]
+verify_jwt = true
